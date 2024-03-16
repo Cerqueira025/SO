@@ -3,7 +3,7 @@
 #include <sys/types.h>
 #include <unistd.h> //chamadas ao sistema: defs e decls essenciais
 #include <fcntl.h>  //O_RDONLY, O_WRONLY, O_CREAT, O_*
-
+#include "aux.h"
 
 int main(int argc, char* argv[]){
 
@@ -14,6 +14,15 @@ int main(int argc, char* argv[]){
      * 
      * dividir este input em chamadas de programas individuais
     */
+    char *commands[argc-2];
+    int N = 0;
+    for(int i=1; i < argc; i++){
+      commands[N] = strdup(argv[i]);
+      printf("command[%d] = %s\n", N, commands[N]);
+      N++;
+    }
+
+    pipeline(N, commands);
   }
 
   //execução de um programa individual
