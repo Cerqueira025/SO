@@ -44,7 +44,7 @@ int mysystem (const char* command) {
 	return res;
 }
 
-void pipeline (int N, char** commands){
+void pipeline_func (int N, char** commands){
   int count[N];
 
   for (int i = 0; i < N; i++){

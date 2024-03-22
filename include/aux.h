@@ -5,4 +5,4 @@
 #include <sys/wait.h>
 
 
-void pipeline (int N, char** commands);
+void pipeline_func (int N, char** commands);

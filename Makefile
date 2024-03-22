@@ -7,9 +7,9 @@ server: bin/orchestrator
 client: bin/client
 folders:
 	@mkdir -p src include obj bin tmp
-bin/orchestrator: obj/orchestrator.o obj/aux.o
+bin/orchestrator: obj/orchestrator.o
 	$(CC) $(LDFLAGS) $^ -o $@
-bin/client: obj/client.o
+bin/client: obj/client.o obj/aux.o
 	$(CC) $(LDFLAGS) $^ -o $@
 obj/%.o: src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
