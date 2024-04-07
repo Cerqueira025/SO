@@ -1,0 +1,20 @@
+---
+BasedOnStyle: Google
+IndentWidth: 4
+AlignAfterOpenBracket: BlockIndent
+AlignArrayOfStructures: Right
+AlignEscapedNewlines: Left
+AllowAllArgumentsOnNextLine: true
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: WithoutElse
+BreakBeforeTernaryOperators: true
+BreakStringLiterals: false
+PointerAlignment: Left
+ReferenceAlignment: Pointer
+ReflowComments: false
+SpaceAfterCStyleCast: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false

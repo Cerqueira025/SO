@@ -1,0 +1,7 @@
+# Ignore compiled object files
+*.o
+
+# Ignore generated directories
+obj/
+exe
+Users/
