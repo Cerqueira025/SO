@@ -1,47 +1,33 @@
 #include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
-#include <unistd.h> //chamadas ao sistema: defs e decls essenciais
-#include <fcntl.h>  //O_RDONLY, O_WRONLY, O_CREAT, O_*
-#include "aux.h"
+#include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include "../include/utils.h"
 
-/**
- * oferece uma interface ao utilizador via linha de comandos
- * 
- * O standard output deverá ser usado pelo cliente para apresentar as 
- * respostas necessárias ao utilizador, e pelo servidor apenas para
- * apresentar informação de debug que julgue necessária.
- * 
- * 
- * execute time -u "prog-a [args]"
-*/
+int main(int argc, char **argv) {
+  if(argc < 5) {
+    printf("usage: %s execute time -u 'prog-a [args]'\n", argv[0]);
+    return 1;
+  }
 
-int main(int argc, char* argv[]){
+  size_t time = atoi(argv[2]);
 
-  //execução de uma pipeline de programas
-  if (strcmp(argv[1],"-p") == 0){
-    /**
-     * prog-a [args] | prog-b [args] | prog-c [args]
-     * 
-     * dividir este input em chamadas de programas individuais
-    */
-    char *commands[argc-2];
-    int N = 0;
-    for(int i=2; i < argc; i++){
-      commands[N] = strdup(argv[i]);
-      printf("command[%d] = %s\n", N, commands[N]);
-      N++;
+  // Espera pela devida conexão com o pipe do servidor
+  int client_fd;
+  do {
+    client_fd = open(MAIN_FIFO_NAME, O_WRONLY);
+    if (client_fd == -1) {
+      perror("open");
+      sleep(1); // Tenta novamente em 1 segundo
     }
+  } while (client_fd == -1);
 
-    pipeline_func(N, commands);
-  }
 
-  //execução de um programa individual
-  if (strcmp(argv[1],"-u") == 0){
-    printf("OLAAA");
-  }
+  int n = 10;
+  write(client_fd, &n, sizeof(int));
 
-  //imprime o estado das tarefas no programa
-  if (strcmp(argv[1],"status") == 0){
-  }
+
+  return 0;
 }
+
+
