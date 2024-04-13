@@ -1,31 +1,51 @@
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <fcntl.h>
+
 #include "../include/utils.h"
+#include "../include/messages.h"
 
 int main(int argc, char **argv) {
-    if(argc < 5) {
-        printf("usage: %s execute time -u 'prog-a [args]'\n", argv[0]);
-        return 1;
+    // ./client execute time -u 'prog-a [args]' 
+    // ./client check tasknum
+
+    // para dar silence do warning
+    int numero = argc;
+    numero--;
+
+    if(strcmp(argv[1], "execute") == 0) {
+        // Espera pela devida conexão com o pipe do servidor
+        int outgoing_fd = open(MAIN_FIFO_NAME, O_WRONLY);
+
+
+        Msg msg_to_send;
+        msg_to_send.pid = -999; // para silenciar o warning
+        int pid = getpid();
+        char *program = argv[4];
+        int time = atoi(argv[2]);
+        create_message(msg_to_send, pid, program, time);
+
+
+        write(outgoing_fd, &msg_to_send, sizeof(Msg));
+        printf("TASK %d Received\n", pid);
+        close(outgoing_fd);
+
+    } else if(strcmp(argv[1], "check") == 0) {
+        int result;
+
+        char buf[20]; 
+        sprintf(buf, "TASK:%s.bin", argv[2]);
+
+        int fildes = open(buf, O_RDONLY);
+        read(fildes, &result, sizeof(int));
+        printf("O RSULTADO È %d\n", result);
+
+        close(fildes);
     }
-
-    size_t time = atoi(argv[2]);
-
-    // Espera pela devida conexão com o pipe do servidor
-    int client_fd;
-    do {
-        client_fd = open(MAIN_FIFO_NAME, O_WRONLY);
-        if (client_fd == -1) {
-            perror("open");
-            sleep(1); // Tenta novamente em 1 segundo
-        }
-    } while (client_fd == -1);
-
-
-    int n = 10;
-    write(client_fd, &n, sizeof(int));
-
+    else
+        printf("POR DEFINIR\n");
 
     return 0;
 }

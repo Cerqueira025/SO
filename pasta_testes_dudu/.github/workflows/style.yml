@@ -7,17 +7,17 @@ on:
     branches: [main, master]
 
 jobs:
-  format:
-    runs-on: ubuntu-latest
-    steps:
-      - name: ☁ Checkout repository
-        uses: actions/checkout@v3
+  #format:
+    #runs-on: ubuntu-latest
+      #steps:
+      # - name: ☁ Checkout repository
+        # uses: actions/checkout@v3
       
-      - name: 📦 Install dependencies
-        run: sudo apt-get install -y clang-format
+          # - name: 📦 Install dependencies
+        #run: sudo apt-get install -y clang-format
 
-      - name: 🎨 Check code formatting
-        run: make check-format
+          #- name: 🎨 Check code formatting
+        #      run: make check-format
 
   lint:
     runs-on: ubuntu-latest

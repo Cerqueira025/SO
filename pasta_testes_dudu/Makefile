@@ -19,14 +19,12 @@ SRC_DIR := src
 INC_DIR := include
 OBJ_DIR := obj
 
-CLIENT_FILES := client.c utils.c
-SERVER_FILES := orchestrator.c utils.c
+CLIENT_FILES := client.c utils.c messages.c
+SERVER_FILES := orchestrator.c utils.c messages.c
 
 CLIENT_OBJ := $(addprefix $(OBJ_DIR)/, $(CLIENT_FILES:.c=.o))
 SERVER_OBJ := $(addprefix $(OBJ_DIR)/, $(SERVER_FILES:.c=.o))
 
-# Nome do executável
-EXEC := exe
 
 # Debug mode
 # If make is ran as "make DEBUG=1", the program compiles without optimizations and allows gdb support
@@ -36,17 +34,6 @@ else
         CFLAGS += -O3
 endif
 
-# Source files
-
-# Meanings
-#	 wildcard: "The wildcard function is a built-in function provided by Make that performs pattern matching to find files or directories matching a specified pattern."
-# 			   "In the context of the Makefile, $(wildcard $(SRC_DIR)/*.c) is used to find all the C source files (*.c) in the SRC_DIR directory."	
-#    patsubst: "The patsubst function is another built-in function in Make that performs pattern substitution on text.
-#	 		   "Syntax: $(patsubst pattern,replacement,text)
-#	 		   "It searches for occurrences of pattern in text and replaces them with replacement."
-SRCS := $(wildcard $(SRC_DIR)/*.c)
-OBJS := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
-DEPS := $(wildcard $(INC_DIR)/*.h)
 
 # Main target
 all: client orchestrator
@@ -61,20 +48,13 @@ orchestrator: $(SERVER_OBJ)
 
 
 
-# Executable
-#
-# Compiles with the correct dependencies, and prints a succes message on success
-$(EXEC): $(OBJS)
-	@$(CC) $(CFLAGS) -I$(INC_DIR) -o $@ $^
-	@echo " Successfully compiled"
-
 # Object files compilation
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(DEPS)
 	@mkdir -p $(OBJ_DIR)
 	$(CC) $(CFLAGS) -I$(INC_DIR) -c $< -o $@
 
 clean:
-	@rm -rf $(OBJ_DIR) $(EXEC) *.fifo
+	@rm -rf $(OBJ_DIR) client orchestrator fifo* TASK:*
 	@echo " Successfully cleaned"
 
 # WHAT A BANGER OF A COMMAND. Cleans and re-compiles the program

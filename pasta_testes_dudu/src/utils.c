@@ -11,18 +11,19 @@ void make_fifo(char *fifo_name) {
     }
 }
 
-void open_fifo(int *fd, char *fifo_name, int flags) {
-  *fd = open(fifo_name, flags);
+int open_fifo(char *fifo_name, int flags) {
+    int fd = open(fifo_name, flags);
 
-  if (*fd == -1) {
-    perror("open");
-    exit(EXIT_FAILURE);
-  }
+    if (fd == -1) {
+        perror("open");
+        exit(EXIT_FAILURE);
+    }
+
+    return fd;
 }
 
-
 void close_fifo(int fd) {
-   if (close(fd) == -1) {
+    if (close(fd) == -1) {
         perror("close");
         exit(EXIT_FAILURE);
     }
