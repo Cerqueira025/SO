@@ -1,5 +1,4 @@
-#include <sys/time.h>
-#include <stdio.h>
+#Eiinclude <stdio.h>
 #include <sys/wait.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,11 +24,11 @@ void set_message_time(Msg msg, int time) {
 }
 */
 
-void create_message(Msg *msg, int pid, char *program, int time) {
+void create_message(Msg *msg, int pid, char *program, int time, MESSAGE_TYPE type) {
     msg->pid = pid;
     strcpy(msg->program, program); /*DUVIDA - outro strcpy?*/
     msg->time = time;
-    msg->time_spent = -1;
+    msg->type = type;
 }
 
 void free_message(Msg msg) {
@@ -37,16 +36,6 @@ void free_message(Msg msg) {
 }
 
 
-long calculate_time_diff(struct timeval time_before, struct timeval time_after) {
-    long seconds = time_after.tv_sec - time_before.tv_sec;
-    long micro_seconds = time_after.tv_usec - time_before.tv_usec;
-    if(micro_seconds < 0) {
-        micro_seconds += 1000000;
-        seconds--;
-    }
-
-    return seconds*1000 + micro_seconds/1000;
-}
 
 
 char* parse_program(Msg *msg_to_handle, char *exec_args[20]) {
@@ -82,18 +71,12 @@ int execute_message(char *exec_args[20]) {
 
 int handle_message(Msg *msg_to_handle) {
     char *exec_args[20];
+
     char *tofree = parse_program(msg_to_handle, exec_args);
 
-    /*DUVIDA - Onde medir o tempo gasto na execução do programa?
-     * Usar pipes ou não?*/
-
-    struct timeval time_before, time_after;
-
-    gettimeofday(&time_before, NULL);
     int result = execute_message(exec_args);
-    gettimeofday(&time_after, NULL);
 
-    msg_to_handle->time_spent = calculate_time_diff(time_before, time_after);
+    msg_to_handle->type = DONE;
 
     free(tofree);
 

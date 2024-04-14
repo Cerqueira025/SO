@@ -30,3 +30,23 @@ void close_file(int fd) {
         exit(EXIT_FAILURE);
     }
 }
+
+void exec_command(char **exec_args) {
+    if(execvp(exec_args[0], exec_args) == -1) {
+        perror("execvp");
+        exit(EXIT_FAILURE);
+    }
+}
+
+
+long calculate_time_diff(struct timeval time_before, struct timeval time_after) {
+    long seconds = time_after.tv_sec - time_before.tv_sec;
+    long micro_seconds = time_after.tv_usec - time_before.tv_usec;
+    if(micro_seconds < 0) {
+        micro_seconds += 1000000;
+        seconds--;
+    }
+
+    return seconds*1000 + micro_seconds/1000;
+}
+
