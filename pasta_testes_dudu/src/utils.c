@@ -11,8 +11,10 @@ void make_fifo(char *fifo_name) {
     }
 }
 
-int open_fifo(char *fifo_name, int flags) {
-    int fd = open(fifo_name, flags);
+int open_file(char *file_name, int flags, mode_t mode) {
+    int fd;
+    if(mode == 0) fd = open(file_name, flags);
+    else fd = open(file_name, flags, mode);
 
     if (fd == -1) {
         perror("open");
@@ -22,7 +24,7 @@ int open_fifo(char *fifo_name, int flags) {
     return fd;
 }
 
-void close_fifo(int fd) {
+void close_file(int fd) {
     if (close(fd) == -1) {
         perror("close");
         exit(EXIT_FAILURE);

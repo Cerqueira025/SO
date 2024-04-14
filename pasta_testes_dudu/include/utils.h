@@ -2,7 +2,7 @@
 
 void make_fifo(char *fifo_name);
 
-int open_fifo(char *fifo_name, int flags);
+int open_file(char *fifo_name, int flags, mode_t mode);
 
-void close_fifo(int fd);
+void close_file(int fd);
 
