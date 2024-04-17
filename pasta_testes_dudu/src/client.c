@@ -43,17 +43,15 @@ int main(int argc, char **argv) {
         close(incoming_fd);
 
         printf("TASK %d Received\n", tasknum);
-        
 
     }
 
     /*-----------CHECK------------*/
     else if(strcmp(argv[1], "check") == 0) {
-        int result;
-
         char buf[20]; 
         sprintf(buf, "TASK_%s.bin", argv[2]);
 
+        int result;
         int fildes = open_file(buf, O_RDONLY, 0);
         read(fildes, &result, sizeof(int));
         printf("O RSULTADO È %d\n", result);

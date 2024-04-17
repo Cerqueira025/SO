@@ -35,6 +35,6 @@ void create_message(Msg *msg, int pid, char *program, int time, MESSAGE_TYPE typ
 
 //void free_message(Msg msg);
 
-int handle_message(Msg *msg_to_handle);
+int handle_message(Msg *msg_to_handle, char *folder_path);
 
 #endif

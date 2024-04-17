@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
     // Access determina as permissões de um ficheiro. Quando é usada a flag F_OK
     // é feito apenas um teste de existência. 0 se suceder, -1 se não.
     if(access(folder_path, F_OK) == -1) {
-        if(mkdir(folder_path, 0664) == -1) {
+        if(mkdir(folder_path, 0777) == -1) {
             perror("mkdir");
             exit(EXIT_FAILURE);
         }
@@ -45,20 +45,17 @@ int main(int argc, char **argv) {
 
     // abre fifo de modo de leitura
     int incoming_fd = open_file(MAIN_FIFO_NAME, O_RDONLY, 0);
-    
     // aberto em modo de write para haver bloqueio no read
     int aux_fd = open_file(MAIN_FIFO_NAME, O_WRONLY, 0);
 
 
-    // criar e arbir o ficheiro partilhado que terá os IDs e tempos de execução
-    char shared_file_path[40];
-    sprintf(shared_file_path, "%s/tasks_time.bin", folder_path);
-    int shared_fd = open_file(shared_file_path, O_CREAT | O_APPEND, 0640);
+    // criar e abrir o ficheiro partilhado que terá os IDs e tempos de execução
+    char shared_file_path[50];
+    sprintf(shared_file_path, "%s/tasks_info.txt", folder_path);
 
-
-    Msg msg_received;
 
     // leitura de cada mensagem
+    Msg msg_received;
     while(read(incoming_fd, &msg_received, sizeof(Msg))) {
 
         // pai apanha o processo filho
@@ -74,6 +71,7 @@ int main(int argc, char **argv) {
 
         // fork para libertar o pai para continuar a leitura
         else if(msg_received.type == SINGLE) {
+            
             // enviar o numero do tarefa através do fifo criado pelo cliente
             send_task_number_to_client(msg_received.pid);
 
@@ -84,21 +82,7 @@ int main(int argc, char **argv) {
                 gettimeofday(&time_before, NULL);
 
                 // processamento da mensagem
-                int result = handle_message(&msg_received);
-
-
-                /*------------POR ALTERAR VALOR DE RETURN A SER ESCRITO---------------*/
-                
-                // cria e abre ficheiro privado de escrita do output do programa
-                char private_file_path[20];
-                sprintf(private_file_path, "TASK_%d.bin", msg_received.pid);
-                int private_fd = open_file(private_file_path, O_WRONLY | O_CREAT, 0640);
-
-                // escreve o output
-                write(private_fd, &result, sizeof(int));
-                close_file(private_fd);
-
-                /*------------POR ALTERAR VALOR DE RETURN A SER ESCRITO---------------*/
+                int result = handle_message(&msg_received, folder_path);
 
                 /*DUVIDA - Onde medir o tempo gasto na execução do programa?
                  * Usar pipes ou não?*/
@@ -108,11 +92,25 @@ int main(int argc, char **argv) {
                 long time_spent = calculate_time_diff(time_before, time_after);
 
 
+
+
+
+                /*------------------NAO ESTA OPEN_FILE--------------------*/
+                int shared_fd = open(shared_file_path, O_CREAT | O_WRONLY | O_APPEND, 0777); // DUVIDA - temos sempre usado o open_file, mas neste especificamente não funciona
+                /*------------------NAO ESTA OPEN_FILE--------------------*/
                 // escreve no ficheiro partilhado o ID e tempo de execução do programa 
-                char formated_text[50];
-                sprintf(formated_text, "Task %d wasted %ld milisseconds\n", msg_received.pid, time_spent);
-                printf("Time spent: %ld\n", time_spent);
-                write(shared_fd, &formated_text, sizeof(formated_text));
+                char formated_text[30];
+                sprintf(formated_text, "%d %s %ld ms\n", msg_received.pid, msg_received.program, time_spent); // DUVIDA - não deveriamos colocar também no ficheiro partilhado o nome do programa, para além do tempo e id de execução?
+                write(shared_fd, formated_text, sizeof(formated_text));
+                close_file(shared_fd);
+
+
+
+
+
+
+
+
 
                 /*----------------ACABAR COM O PROCESSO------------------*/
                 msg_received.pid = getpid(); /*DUVIDA - estamos a dar overwrite to pid vindo do programa do cliente para facilitar o waitpid por parte do pai*/
@@ -124,7 +122,6 @@ int main(int argc, char **argv) {
     }
 
     // fechar ficheiros
-    close_file(shared_fd);
     close_file(incoming_fd);
     close_file(aux_fd);
 
