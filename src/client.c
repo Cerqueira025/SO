@@ -1,47 +1,64 @@
 #include <stdio.h>
 #include <string.h>
-#include <sys/types.h>
-#include <unistd.h> //chamadas ao sistema: defs e decls essenciais
-#include <fcntl.h>  //O_RDONLY, O_WRONLY, O_CREAT, O_*
-#include "include/aux.h"
+#include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
 
-/**
- * oferece uma interface ao utilizador via linha de comandos
- * 
- * O standard output deverá ser usado pelo cliente para apresentar as 
- * respostas necessárias ao utilizador, e pelo servidor apenas para
- * apresentar informação de debug que julgue necessária.
- * 
- * 
- * execute time -u "prog-a [args]"
-*/
+#include "../include/utils.h"
+#include "../include/messages.h"
 
-int main(int argc, char* argv[]){
+int main(int argc, char **argv) {
+    // ./client execute time -u "prog-a [args]" 
+    // ./client check tasknum
 
-  //execução de uma pipeline de programas
-  if (strcmp(argv[1],"-p") == 0){
-    /**
-     * prog-a [args] | prog-b [args] | prog-c [args]
-     * 
-     * dividir este input em chamadas de programas individuais
-    */
-    char *commands[argc-2];
-    int N = 0;
-    for(int i=2; i < argc; i++){
-      commands[N] = strdup(argv[i]);
-      printf("command[%d] = %s\n", N, commands[N]);
-      N++;
+    /*-----------EXECUTE------------*/
+    if(strcmp(argv[1], "execute") == 0) {
+        int pid = getpid();
+
+        // cria fifo para receber a resposta do servidor com o pid
+        char server_to_client_fifo[20];
+        sprintf(server_to_client_fifo, "fifo_%d", pid);
+        make_fifo(server_to_client_fifo);
+
+        // preparar mensagem a enviar para o servidor
+        Msg msg_to_send;
+
+        char program[300]; 
+        strcpy(program, argv[4]);
+
+        int time = atoi(argv[2]);
+        create_message(&msg_to_send, pid, 0, time, program, SCHEDULED);
+
+        // enviar a mensagem para o servidor
+        int outgoing_fd = open_file(MAIN_FIFO_NAME, O_WRONLY, 0);
+        write(outgoing_fd, &msg_to_send, sizeof(Msg));
+        close_file(outgoing_fd);
+
+
+        // abrir fifo para receber o número da tarefa
+        int tasknum;
+        int incoming_fd = open_file(server_to_client_fifo, O_RDONLY, 0);
+        read(incoming_fd, &tasknum, sizeof(int));
+        close(incoming_fd);
+
+        printf("TASK %d Received\n", tasknum);
+
+        if (unlink(server_to_client_fifo) == -1) {
+            perror("unlink");
+            exit(EXIT_FAILURE);
+        }
+
     }
 
-    pipeline_func(N, commands);
-  }
+    /*-----------STATUS------------*/
+    else if(strcmp(argv[1], "status") == 0) {
+        // TO DO....
+    }
 
-  //execução de um programa individual
-  if (strcmp(argv[1],"-u") == 0){
-    printf("OLAAA");
-  }
+    else
+        printf("POR DEFINIR\n");
 
-  //imprime o estado das tarefas no programa
-  if (strcmp(argv[1],"status") == 0){
-  }
+    return 0;
 }
+
+
