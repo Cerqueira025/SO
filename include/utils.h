@@ -1,8 +1,12 @@
-#define MAIN_FIFO_NAME "ficheiro_pipe.fifo"
+
+#define MAIN_FIFO_NAME "fifo_main"
 
 void make_fifo(char *fifo_name);
 
-void open_fifo(int *fd, char *fifo_name, int flags);
+int open_file(char *fifo_name, int flags, mode_t mode);
 
-void close_fifo(int fd);
+void close_file(int fd);
+
+long calculate_time_diff(struct timeval time_before, struct timeval time_after);
+
 
