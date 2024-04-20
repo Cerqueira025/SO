@@ -20,15 +20,14 @@ int main(int argc, char **argv) {
         sprintf(server_to_client_fifo, "fifo_%d", pid);
         make_fifo(server_to_client_fifo);
 
-
         // preparar mensagem a enviar para o servidor
         Msg msg_to_send;
 
-        char program[300]; /*DUVIDA - Podemos usar strcpy?*/
+        char program[300]; 
         strcpy(program, argv[4]);
 
         int time = atoi(argv[2]);
-        create_message(&msg_to_send, pid, program, time, SINGLE);
+        create_message(&msg_to_send, pid, 0, time, program, SCHEDULED);
 
         // enviar a mensagem para o servidor
         int outgoing_fd = open_file(MAIN_FIFO_NAME, O_WRONLY, 0);
@@ -44,19 +43,11 @@ int main(int argc, char **argv) {
 
         printf("TASK %d Received\n", tasknum);
 
-    }
+        if (unlink(server_to_client_fifo) == -1) {
+            perror("unlink");
+            exit(EXIT_FAILURE);
+        }
 
-    /*-----------CHECK------------*/
-    else if(strcmp(argv[1], "check") == 0) {
-        char buf[20]; 
-        sprintf(buf, "TASK_%s.bin", argv[2]);
-
-        int result;
-        int fildes = open_file(buf, O_RDONLY, 0);
-        read(fildes, &result, sizeof(int));
-        printf("O RSULTADO È %d\n", result);
-
-        close_file(fildes);
     }
 
     /*-----------STATUS------------*/

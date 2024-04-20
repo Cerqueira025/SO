@@ -53,8 +53,9 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(DEPS)
 	@mkdir -p $(OBJ_DIR)
 	$(CC) $(CFLAGS) -I$(INC_DIR) -c $< -o $@
 
+# PASTA* IS TEMPORARY AND NEEDS TO BE REMOVED
 clean:
-	@rm -rf $(OBJ_DIR) client orchestrator fifo* TASK_*
+	@rm -rf $(OBJ_DIR) client orchestrator fifo* TASK_* PASTA*
 	@echo " Successfully cleaned"
 
 # WHAT A BANGER OF A COMMAND. Cleans and re-compiles the program
