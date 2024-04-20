@@ -1,7 +1,7 @@
 # Variables
 
 # C compiler - gcc
-CC := gcc 
+CC := gcc
 
 # Compiler flags
 
