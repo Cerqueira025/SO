@@ -1,18 +1,18 @@
+#include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdlib.h>
-#include <fcntl.h>
 
-#include "../include/utils.h"
 #include "../include/messages.h"
+#include "../include/utils.h"
 
 int main(int argc, char **argv) {
-    // ./client execute time -u "prog-a [args]" 
+    // ./client execute time -u "prog-a [args]"
     // ./client check tasknum
 
     /*-----------EXECUTE------------*/
-    if(strcmp(argv[1], "execute") == 0) {
+    if (strcmp(argv[1], "execute") == 0) {
         int pid = getpid();
 
         // cria fifo para receber a resposta do servidor com o pid
@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
         // preparar mensagem a enviar para o servidor
         Msg msg_to_send;
 
-        char program[300]; 
+        char program[300];
         strcpy(program, argv[4]);
 
         int time = atoi(argv[2]);
@@ -33,7 +33,6 @@ int main(int argc, char **argv) {
         int outgoing_fd = open_file(MAIN_FIFO_NAME, O_WRONLY, 0);
         write(outgoing_fd, &msg_to_send, sizeof(Msg));
         close_file(outgoing_fd);
-
 
         // abrir fifo para receber o número da tarefa
         int tasknum;
@@ -51,7 +50,7 @@ int main(int argc, char **argv) {
     }
 
     /*-----------STATUS------------*/
-    else if(strcmp(argv[1], "status") == 0) {
+    else if (strcmp(argv[1], "status") == 0) {
         // TO DO....
     }
 
@@ -60,5 +59,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-
-
