@@ -5,14 +5,13 @@
 
 typedef enum message_type {
     ERR,
-    STATUS, // status
-    SCHEDULED, 
+    STATUS,  // status
+    SCHEDULED,
     EXECUTING,
-  //FINISHED
+    //FINISHED
     COMPLETED,
 
 } MESSAGE_TYPE;
-
 
 typedef struct msg {
     int pid;
@@ -33,11 +32,11 @@ typedef struct msg_list {
     int parallel_tasks;
 } Msg_list;
 
-
-
 //long calculate_time_diff(struct timeval time_before, struct timeval time_after);
 
-void create_message(Msg *msg, int pid, int is_pipe, int time, char *program, MESSAGE_TYPE type);
+void create_message(
+    Msg *msg, int pid, int is_pipe, int time, char *program, MESSAGE_TYPE type
+);
 
 //void free_message(Msg msg);
 
@@ -45,7 +44,9 @@ long handle_message(Msg *msg_to_handle, char *folder_path);
 
 void init_messages_list(Msg_list *messages_list, int parallel_tasks);
 
-void insert_scheduled_messages_list(Msg_list *messages_list, Msg message_to_isert);
+void insert_scheduled_messages_list(
+    Msg_list *messages_list, Msg message_to_isert
+);
 
 void delete_from_executing_messages_list(Msg_list *messages_list, int pid);
 
