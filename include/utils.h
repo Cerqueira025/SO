@@ -1,3 +1,4 @@
+
 #define MAIN_FIFO_NAME "fifo_main"
 
 void make_fifo(char *fifo_name);
