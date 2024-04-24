@@ -33,7 +33,7 @@ void create_message(
     msg->pid = pid;
     msg->time = time;
     msg->is_pipe = is_pipe;
-    strcpy(msg->program, program);
+    if (program != NULL) strcpy(msg->program, program);
     msg->type = type;
 }
 
@@ -85,7 +85,7 @@ void execute_message(int pid, char *exec_args[20], char *folder_path) {
     }
 }
 
-long handle_message(Msg *msg_to_handle, char *folder_path) {
+long parse_and_execute_message(Msg *msg_to_handle, char *folder_path) {
     char *exec_args[20];
 
     char *tofree = parse_program(msg_to_handle, exec_args);
@@ -105,7 +105,7 @@ long handle_message(Msg *msg_to_handle, char *folder_path) {
     return time_spent;
 }
 
-void init_messages_list(Msg_list *messages_list, int parallel_tasks) {
+void create_messages_list(Msg_list *messages_list, int parallel_tasks) {
     messages_list->scheduled_messages_size = 0;
     messages_list->executing_messages_size = 0;
     messages_list->parallel_tasks = parallel_tasks;

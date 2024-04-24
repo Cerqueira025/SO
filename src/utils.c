@@ -4,6 +4,15 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+void create_folder(char *folder_path) {
+    if (access(folder_path, F_OK) == -1) {
+        if (mkdir(folder_path, 0777) == -1) {
+            perror("mkdir");
+            exit(EXIT_FAILURE);
+        }
+    }
+}
+
 void make_fifo(char *fifo_name) {
     if (mkfifo(fifo_name, 0666) == -1) {
         perror("mkfifo");
@@ -24,6 +33,14 @@ int open_file(char *file_name, int flags, mode_t mode) {
     }
 
     return fd;
+}
+
+int open_file_pid(int message_pid, int flags, mode_t mode) {
+    char buffer[20];
+    sprintf(buffer, "fifo_%d", message_pid);
+    int outgoing_fd = open_file(buffer, flags, mode);
+
+    return outgoing_fd;
 }
 
 void close_file(int fd) {

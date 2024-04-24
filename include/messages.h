@@ -2,15 +2,14 @@
 #define MESSAGES_H
 
 #define MAX_MESSAGE_NUMBER 100
+#define MAX_MESSAGE_SIZE 350
 
 typedef enum message_type {
     ERR,
-    STATUS,  // status
+    STATUS,
     SCHEDULED,
     EXECUTING,
-    //FINISHED
     COMPLETED,
-
 } MESSAGE_TYPE;
 
 typedef struct msg {
@@ -40,9 +39,9 @@ void create_message(
 
 //void free_message(Msg msg);
 
-long handle_message(Msg *msg_to_handle, char *folder_path);
+long parse_and_execute_message(Msg *msg_to_handle, char *folder_path);
 
-void init_messages_list(Msg_list *messages_list, int parallel_tasks);
+void create_messages_list(Msg_list *messages_list, int parallel_tasks);
 
 void insert_scheduled_messages_list(
     Msg_list *messages_list, Msg message_to_isert
