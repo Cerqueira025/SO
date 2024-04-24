@@ -7,12 +7,69 @@
 #include "../include/messages.h"
 #include "../include/utils.h"
 
+void send_messages(Msg list[], int list_size, int outgoing_fd) {
+    char buffer[350];
+    for (int i = 0; i < list_size; i++) {
+        Msg msg = list[i];
+        sprintf(buffer, "%d %s\n", msg.pid, msg.program);
+        write(outgoing_fd, buffer, sizeof(buffer));
+    }
+}
+
+void read_and_send_messages(char *shared_file_path, int outgoing_fd) {
+    // usa-se a flag O_CREAT no caso deste ficheiro ainda não ter sido aberto
+    int incoming_fd = open_file(shared_file_path, O_RDONLY | O_CREAT, 0777);
+
+    char buffer[MAX_MESSAGE_SIZE];
+    while (read(incoming_fd, &buffer, MAX_MESSAGE_SIZE) > 0)
+        write(outgoing_fd, &buffer, MAX_MESSAGE_SIZE);
+
+    close(incoming_fd);
+}
+
+void send_status_to_client(
+    Msg_list messages, int message_pid, char *shared_file_path
+) {
+    int outgoing_fd = open_file_pid(message_pid, O_WRONLY, 0);
+
+    write(outgoing_fd, "Executing\n", MAX_MESSAGE_SIZE);
+    send_messages(
+        messages.executing_messages, messages.executing_messages_size,
+        outgoing_fd
+    );
+
+    write(outgoing_fd, "Scheduled\n", MAX_MESSAGE_SIZE);
+    send_messages(
+        messages.scheduled_messages, messages.scheduled_messages_size,
+        outgoing_fd
+    );
+
+    write(outgoing_fd, "Completed\n", MAX_MESSAGE_SIZE);
+    read_and_send_messages(shared_file_path, outgoing_fd);
+
+    close(outgoing_fd);
+}
+
 void send_task_number_to_client(int message_pid) {
-    char buffer[20];
-    sprintf(buffer, "fifo_%d", message_pid);
-    int outgoing_fd = open_file(buffer, O_WRONLY, 0);
+    int outgoing_fd = open_file_pid(message_pid, O_WRONLY, 0);
     write(outgoing_fd, &message_pid, sizeof(message_pid));
     close(outgoing_fd);
+}
+
+void write_time_spent(
+    char *shared_file_path, Msg msg_to_write, long time_spent
+) {
+    int shared_fd =
+        open_file(shared_file_path, O_WRONLY | O_APPEND | O_CREAT, 0777);
+
+    char formated_text[MAX_MESSAGE_SIZE];
+    sprintf(
+        formated_text, "%d %s %ld ms\n", msg_to_write.pid, msg_to_write.program,
+        time_spent
+    );
+
+    write(shared_fd, formated_text, sizeof(formated_text));
+    close_file(shared_fd);
 }
 
 int main(int argc, char **argv) {
@@ -28,12 +85,7 @@ int main(int argc, char **argv) {
 
     // Access determina as permissões de um ficheiro. Quando é usada a flag F_OK
     // é feito apenas um teste de existência. 0 se suceder, -1 se não.
-    if (access(folder_path, F_OK) == -1) {
-        if (mkdir(folder_path, 0777) == -1) {
-            perror("mkdir");
-            exit(EXIT_FAILURE);
-        }
-    }
+    create_folder(folder_path);
 
     // cria fifo para receber a mensagem do cliente
     make_fifo(MAIN_FIFO_NAME);
@@ -53,57 +105,49 @@ int main(int argc, char **argv) {
     Msg message_received;
 
     Msg_list messages_list;
-    init_messages_list(&messages_list, parallel_tasks);
+    create_messages_list(&messages_list, parallel_tasks);
 
     while (read(incoming_fd, &message_received, sizeof(Msg))) {
-        // pai apanha o processo filho
-        if (message_received.type == COMPLETED) {
-            waitpid(message_received.child_pid, NULL, WUNTRACED);
-            printf("ACABEI\n");
-            delete_from_executing_messages_list(
-                &messages_list, message_received.pid
+        if (message_received.type == STATUS)
+            send_status_to_client(
+                messages_list, message_received.pid, shared_file_path
             );
-        }
-
         else {
-            // enviar o numero do tarefa através do fifo criado pelo cliente
-            send_task_number_to_client(message_received.pid);
-
-            insert_scheduled_messages_list(&messages_list, message_received);
-            printf("ENTREI\n");
-        }
-        //printf("TAMANHO %d, PID %d\n", messages_list.scheduled_messages_size, messages_list.scheduled_messages[messages_list.scheduled_messages_size-1].pid);
-
-        //sort(POLICY);
-        Msg msg_to_execute = get_next_executing_message(&messages_list);
-
-        // se há mensagem para executar
-        if (msg_to_execute.type != ERR) {
-            // fork para libertar o pai para continuar a leitura
-            if (fork() == 0) {
-                /*---------PROCESSAMENTO E EXECUÇÂO DA MENSAGEM---------*/
-                printf("COMECEI A EXECUTAR\n");
-
-                long time_spent = handle_message(&msg_to_execute, folder_path);
-
-                /*----------------ESCRITA DO TEMPO GASTO----------------*/
-                int shared_fd = open_file(
-                    shared_file_path, O_CREAT | O_WRONLY | O_APPEND, 0777
+            // pai apanha o processo filho
+            if (message_received.type == COMPLETED) {
+                waitpid(message_received.child_pid, NULL, WUNTRACED);
+                delete_from_executing_messages_list(
+                    &messages_list, message_received.pid
                 );
-                char formated_text[30];
-                sprintf(
-                    formated_text, "%d %s %ld ms\n", msg_to_execute.pid,
-                    msg_to_execute.program, time_spent
-                );
-                write(shared_fd, formated_text, sizeof(formated_text));
-                close_file(shared_fd);
+            } else {
+                // enviar o numero do tarefa através do fifo criado pelo cliente
+                send_task_number_to_client(message_received.pid);
 
-                /*----------------ACABAR COM O PROCESSO-----------------*/
-                msg_to_execute.child_pid = getpid();
-                write(
-                    aux_fd, &msg_to_execute, sizeof(msg_to_execute)
-                );  // a mensagem já tem tipo COMPLETED e o pid refere-se a este processo
-                exit(0);
+                insert_scheduled_messages_list(
+                    &messages_list, message_received
+                );
+            }
+
+            //sort(POLICY);
+
+            Msg msg_to_execute = get_next_executing_message(&messages_list);
+
+            // se existe uma mensagem a executar
+            if (msg_to_execute.type != ERR) {
+                // fork para libertar o pai para continuar a leitura
+                if (fork() == 0) {
+                    long time_spent =
+                        parse_and_execute_message(&msg_to_execute, folder_path);
+
+                    write_time_spent(
+                        shared_file_path, msg_to_execute, time_spent
+                    );
+
+                    // a mensagem já tem tipo COMPLETED e o pid refere-se a ESTE processo
+                    msg_to_execute.child_pid = getpid();
+                    write(aux_fd, &msg_to_execute, sizeof(msg_to_execute));
+                    exit(0);
+                }
             }
         }
     }

@@ -47,7 +47,6 @@ orchestrator: $(SERVER_OBJ)
 	@echo " Successfully made client"
 
 
-
 # Object files compilation
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(DEPS)
 	@mkdir -p $(OBJ_DIR)
