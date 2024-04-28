@@ -8,4 +8,6 @@ TODO:
 enviar "ls | wc" mas disse que era -u então está errado. o mesmo aplica-se ao contrário.
 - verificar os includes. nunca houve client.h??
 - fazer política de escalonamento
+- dar free do toFree de cada parse, dentro do ciclo for, no execute_pipe_message
+- tentar colocar os redirecionamentos apenas dentro do processo filho, na função execute_message, para não haver necessidade de redirecionar de volta para os descritores originais
 ```
