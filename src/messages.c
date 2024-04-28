@@ -28,7 +28,7 @@ void set_message_time(Msg msg, int time) {
 */
 
 void create_message(
-    Msg *msg, int pid, int is_pipe, int time, char *program, MESSAGE_TYPE type
+    Msg *msg, int pid, int time, int is_pipe, char *program, MESSAGE_TYPE type
 ) {
     msg->pid = pid;
     msg->time = time;
@@ -41,16 +41,18 @@ void free_message(Msg msg) {
     free(msg.program);
 }
 
-char *parse_program(Msg *msg_to_handle, char *exec_args[20]) {
+char *parse_program(char *program, char *exec_args[20], char *formatter, int *number_args) {
     int i = 0;
     char *string, *cmd, *tofree;
 
-    tofree = cmd = strdup(msg_to_handle->program);
-    while ((string = strsep(&cmd, " ")) != NULL) {
+    tofree = cmd = strdup(program);
+    while ((string = strsep(&cmd, formatter)) != NULL) {
         exec_args[i] = string;
         i++;
     }
     exec_args[i] = NULL;
+    
+    *number_args = i;
 
     return tofree;
 }
@@ -85,15 +87,78 @@ void execute_message(int pid, char *exec_args[20], char *folder_path) {
     }
 }
 
-long parse_and_execute_message(Msg *msg_to_handle, char *folder_path) {
-    char *exec_args[20];
 
-    char *tofree = parse_program(msg_to_handle, exec_args);
+void execute_pipe_message(int message_pid, char *exec_args[20], char *folder_path, int number_args) {
+    int num_pipes = number_args - 1;
+    int pipes[MAX_PIPE_NUMBER][2];
+
+    char buf[30];
+    sprintf(buf, "%s/task_%d.bin", folder_path, message_pid);
+    int temp_fd = open_file(buf, O_CREAT | O_WRONLY, 0640);
+
+    for (int i = 0; i < num_pipes; i++) {
+        if (pipe(pipes[i]) < 0) {
+            perror("pipe error");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    for (int i = 0; i < number_args; i++) {
+        if (fork() == 0) { 
+            char *command_args[20];
+            char *formatter = " ";
+
+            /* o facto de não ter um inteiro a receber o valor do número de argumentos
+            *  e sim o NULL que nós tinhamos, levava ao programa não funcionar
+            */
+            int number_args_commands = 0;
+            parse_program(exec_args[i], command_args, formatter, &number_args_commands);
+
+            if (i > 0) { 
+                dup2(pipes[i-1][0], 0);
+                close(pipes[i-1][0]);
+            }
+            if (i < num_pipes) { 
+                dup2(pipes[i][1], 1);
+                close(pipes[i][1]);
+            } else {
+                dup2(temp_fd, 1);
+                close(temp_fd);
+            }
+
+            for (int j = 0; j < num_pipes; j++) {
+                close(pipes[j][0]);
+                close(pipes[j][1]);
+            }
+
+            execvp(command_args[0], command_args);
+            exit(EXIT_FAILURE); 
+        }
+    }
+
+    for (int i = 0; i < num_pipes; i++) {
+        close(pipes[i][0]);
+        close(pipes[i][1]);
+    }
+
+    for (int i = 0; i < number_args; i++) {
+        wait(NULL);
+    }
+
+}
+
+
+long parse_and_execute_message(Msg *msg_to_handle, char *folder_path) {
+    int  number_args;
+    char *exec_args[20];
+    char *formatter = msg_to_handle->is_pipe ? "|" : " ";
+    char *tofree = parse_program(msg_to_handle->program, exec_args, formatter, &number_args);
 
     struct timeval time_before, time_after;
     gettimeofday(&time_before, NULL);
 
-    execute_message(msg_to_handle->pid, exec_args, folder_path);
+    if (msg_to_handle->is_pipe) execute_pipe_message(msg_to_handle->pid, exec_args, folder_path, number_args);
+    else execute_message(msg_to_handle->pid, exec_args, folder_path);
 
     gettimeofday(&time_after, NULL);
     long time_spent = calculate_time_diff(time_before, time_after);

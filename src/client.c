@@ -51,11 +51,19 @@ int main(int argc, char **argv) {
     Msg msg_to_send;
 
     if (strcmp(argv[1], "execute") == 0) {
+        int time = atoi(argv[2]);
+
+        int ispipe = -1; 
+        if (strcmp(argv[3], "-u") == 0) ispipe = 0;
+        else if (strcmp(argv[3], "-p") == 0) ispipe = 1;
+        else exit(EXIT_FAILURE);
+        
+        printf("É PIPE: %d\n", ispipe);
+
         char program[300];
         strcpy(program, argv[4]);
 
-        int time = atoi(argv[2]);
-        create_message(&msg_to_send, pid, 0, time, program, SCHEDULED);
+        create_message(&msg_to_send, pid, time, ispipe, program, SCHEDULED);
 
         send_message_to_server(msg_to_send);
 
@@ -72,6 +80,8 @@ int main(int argc, char **argv) {
     } else
         printf("Incorrect option\n");
 
+
+    // apagar fifo
     if (unlink(server_to_client_fifo) == -1) {
         perror("unlink");
         exit(EXIT_FAILURE);

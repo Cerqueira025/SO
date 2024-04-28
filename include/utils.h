@@ -1,6 +1,5 @@
 
 #define MAIN_FIFO_NAME "fifo_main"
-
 void create_folder(char *folder_path);
 
 void make_fifo(char *fifo_name);

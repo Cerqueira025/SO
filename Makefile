@@ -40,11 +40,11 @@ all: client orchestrator
 
 client: $(CLIENT_OBJ)
 	@$(CC) $(CFLAGS) $^ -o $@;
-	@echo " Successfully made client"
+	@echo "\nSuccessfully made client\n"
 
 orchestrator: $(SERVER_OBJ)
 	@$(CC) $(CFLAGS) $^ -o $@;
-	@echo " Successfully made client"
+	@echo "\nSuccessfully made client\n"
 
 
 # Object files compilation
@@ -55,22 +55,22 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(DEPS)
 # PASTA* IS TEMPORARY AND NEEDS TO BE REMOVED
 clean:
 	@rm -rf $(OBJ_DIR) client orchestrator fifo* TASK_* PASTA*
-	@echo " Successfully cleaned"
+	@echo "\nSuccessfully cleaned\n"
 
 # WHAT A BANGER OF A COMMAND. Cleans and re-compiles the program
 rebuild: clean all
 
 format:
 	@clang-format --verbose -i $(SRC_DIR)/* $(INC_DIR)/*
-	@echo " Successfully formatted"
+	@echo "\nSuccessfully formatted\n"
 
 check-format:
 	@clang-format --dry-run --Werror $(SRC_DIR)/* $(INC_DIR)/*
-	@echo " Successfully checked format"
+	@echo "\nSuccessfully checked format\n"
 
 lint:
 	@clang-tidy --warnings-as-errors=* $(SRC_DIR)/* $(INC_DIR)/*
-	@echo " Successfully linted"
+	@echo "\nSuccessfully linted\n"
 
 # Delete object files if a command fails
 .DELETE_ON_ERROR:

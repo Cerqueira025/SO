@@ -38,13 +38,13 @@ void send_status_to_client(
         outgoing_fd
     );
 
-    write(outgoing_fd, "Scheduled\n", MAX_MESSAGE_SIZE);
+    write(outgoing_fd, "\nScheduled\n", MAX_MESSAGE_SIZE);
     send_messages(
         messages.scheduled_messages, messages.scheduled_messages_size,
         outgoing_fd
     );
 
-    write(outgoing_fd, "Completed\n", MAX_MESSAGE_SIZE);
+    write(outgoing_fd, "\nCompleted\n", MAX_MESSAGE_SIZE);
     read_and_send_messages(shared_file_path, outgoing_fd);
 
     close(outgoing_fd);
@@ -75,8 +75,8 @@ void write_time_spent(
 int main(int argc, char **argv) {
     if (argc != 4) {
         printf(
-            "usage: ./orchestrator output_folder parallel-tasks sched-policy\n"
-        );
+                "usage: ./orchestrator output_folder parallel-tasks sched-policy\n"
+              );
         exit(EXIT_FAILURE);
     }
 
@@ -110,22 +110,22 @@ int main(int argc, char **argv) {
     while (read(incoming_fd, &message_received, sizeof(Msg))) {
         if (message_received.type == STATUS)
             send_status_to_client(
-                messages_list, message_received.pid, shared_file_path
-            );
+                    messages_list, message_received.pid, shared_file_path
+                    );
         else {
             // pai apanha o processo filho
             if (message_received.type == COMPLETED) {
                 waitpid(message_received.child_pid, NULL, WUNTRACED);
                 delete_from_executing_messages_list(
-                    &messages_list, message_received.pid
-                );
+                        &messages_list, message_received.pid
+                        );
             } else {
                 // enviar o numero do tarefa através do fifo criado pelo cliente
                 send_task_number_to_client(message_received.pid);
 
                 insert_scheduled_messages_list(
-                    &messages_list, message_received
-                );
+                        &messages_list, message_received
+                        );
             }
 
             //sort(POLICY);
@@ -140,8 +140,8 @@ int main(int argc, char **argv) {
                         parse_and_execute_message(&msg_to_execute, folder_path);
 
                     write_time_spent(
-                        shared_file_path, msg_to_execute, time_spent
-                    );
+                            shared_file_path, msg_to_execute, time_spent
+                            );
 
                     // a mensagem já tem tipo COMPLETED e o pid refere-se a ESTE processo
                     msg_to_execute.child_pid = getpid();

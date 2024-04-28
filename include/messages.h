@@ -3,6 +3,7 @@
 
 #define MAX_MESSAGE_NUMBER 100
 #define MAX_MESSAGE_SIZE 350
+#define MAX_PIPE_NUMBER 20
 
 typedef enum message_type {
     ERR,
@@ -34,7 +35,7 @@ typedef struct msg_list {
 //long calculate_time_diff(struct timeval time_before, struct timeval time_after);
 
 void create_message(
-    Msg *msg, int pid, int is_pipe, int time, char *program, MESSAGE_TYPE type
+    Msg *msg, int pid, int time, int is_pipe, char *program, MESSAGE_TYPE type
 );
 
 //void free_message(Msg msg);
