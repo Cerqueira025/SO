@@ -54,4 +54,6 @@ void delete_from_executing_messages_list(Msg_list *messages_list, int pid);
 
 Msg get_next_executing_message(Msg_list *messages_list);
 
+void sort_by_SJF(Msg *scheduled_messages, int size);
+
 #endif

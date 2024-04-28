@@ -1,5 +1,8 @@
 
 #define MAIN_FIFO_NAME "fifo_main"
+
+struct timeval; // DÚVIDA - devemos colocar aqui struct timeval para eliminar o erro na função calculcate_time_diff??
+
 void create_folder(char *folder_path);
 
 void make_fifo(char *fifo_name);

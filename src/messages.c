@@ -10,8 +10,6 @@
 
 #include "../include/utils.h"
 
-typedef struct msg Msg;
-
 /*
  * Debater uso destas funções. Remover comentário se necessário.
 void set_message_pid(Msg msg, int pid) {
@@ -37,9 +35,6 @@ void create_message(
     msg->type = type;
 }
 
-void free_message(Msg msg) {
-    free(msg.program);
-}
 
 char *parse_program(
     char *program, char *exec_args[20], char *formatter, int *number_args
@@ -240,4 +235,16 @@ Msg get_next_executing_message(Msg_list *messages_list) {
         to_execute.type = ERR;
 
     return to_execute;
+}
+
+void sort_by_SJF(Msg *scheduled_messages, int size) {
+    for (int i = 0; i < size; i++) {
+        for (int j = i; j < size; j++) {
+            if (scheduled_messages[i].time > scheduled_messages[j].time) {
+                Msg temp = scheduled_messages[i];
+                scheduled_messages[i] = scheduled_messages[j];
+                scheduled_messages[j] = temp;
+            }
+        }
+    }
 }

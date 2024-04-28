@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 void create_folder(char *folder_path) {
     if (access(folder_path, F_OK) == -1) {
