@@ -3,11 +3,13 @@
 
 #define MAX_MESSAGE_NUMBER 100
 #define MAX_MESSAGE_SIZE 350
+#define MAX_STRING_SIZE 200
 #define MAX_PIPE_NUMBER 20
 
 typedef enum message_type {
     ERR,
     STATUS,
+    STOP,
     SCHEDULED,
     EXECUTING,
     COMPLETED,

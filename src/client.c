@@ -35,7 +35,7 @@ void receive_and_print_status(char *server_to_client_fifo) {
 int main(int argc, char **argv) {
     if (argc != 2 && argc != 5) {
         printf(
-            "Usage:\n    ./client execute time -u 'prog-a [args]'\n    ./client status\n"
+            "Usage:\n    ./client execute time -u 'prog-a [args]'\n    ./client status\n    ./client server-stop\n"
         );
         exit(EXIT_FAILURE);
     }
@@ -50,15 +50,19 @@ int main(int argc, char **argv) {
     // preparar mensagem a enviar para o servidor
     Msg msg_to_send;
 
+    /*-----------EXECUTE------------*/
     if (strcmp(argv[1], "execute") == 0) {
         int time = atoi(argv[2]);
 
-        int ispipe = -1; 
-        if (strcmp(argv[3], "-u") == 0) ispipe = 0;
-        else if (strcmp(argv[3], "-p") == 0) ispipe = 1;
-        else exit(EXIT_FAILURE);
-        
-        printf("É PIPE: %d\n", ispipe);
+        int ispipe = -1;
+        if (strcmp(argv[3], "-u") == 0)
+            ispipe = 0;
+        else if (strcmp(argv[3], "-p") == 0)
+            ispipe = 1;
+        else {
+            fprintf(stderr, "Incorrect flag. Usage: -u | -p\n");
+            exit(EXIT_FAILURE);
+        }
 
         char program[300];
         strcpy(program, argv[4]);
@@ -77,9 +81,19 @@ int main(int argc, char **argv) {
         send_message_to_server(msg_to_send);
 
         receive_and_print_status(server_to_client_fifo);
-    } else
-        printf("Incorrect option\n");
+    }
 
+    /*-----------SERVER-STOP------------*/
+    else if (strcmp(argv[1], "server-stop") == 0) {
+        create_message(&msg_to_send, pid, -1, -1, NULL, STOP);
+
+        send_message_to_server(msg_to_send);
+
+        printf("Server shutting down...\n");
+    }
+
+    else
+        printf("Incorrect option\n");
 
     // apagar fifo
     if (unlink(server_to_client_fifo) == -1) {
