@@ -123,7 +123,8 @@ void execute_pipe_message(
                 dup2(pipes[i][1], 1);
                 close(pipes[i][1]);
             } else {
-                dup2(temp_fd, 1);
+                dup2(temp_fd, 1); // std_out
+                dup2(temp_fd, 2); // std_err
                 close(temp_fd);
             }
 

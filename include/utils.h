@@ -1,7 +1,13 @@
 
 #define MAIN_FIFO_NAME "fifo_main"
 
-struct timeval; // DÚVIDA - devemos colocar aqui struct timeval para eliminar o erro na função calculcate_time_diff??
+struct timeval; 
+
+typedef enum sched_policy {
+    FCFS,
+    SJF
+    // PP
+} SCHED_POLICY;
 
 void create_folder(char *folder_path);
 

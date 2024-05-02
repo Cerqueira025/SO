@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/wait.h>
@@ -9,11 +10,11 @@
 #include "../include/utils.h"
 
 void send_messages(Msg list[], int list_size, int outgoing_fd) {
-    char buffer[350];
+    char buffer[MAX_MESSAGE_SIZE];
     for (int i = 0; i < list_size; i++) {
         Msg msg = list[i];
         sprintf(buffer, "%d %s\n", msg.pid, msg.program);
-        write(outgoing_fd, buffer, sizeof(buffer));
+        write(outgoing_fd, buffer, MAX_MESSAGE_SIZE);
     }
 }
 
@@ -22,8 +23,9 @@ void read_and_send_messages(char *shared_file_path, int outgoing_fd) {
     int incoming_fd = open_file(shared_file_path, O_RDONLY | O_CREAT, 0777);
 
     char buffer[MAX_MESSAGE_SIZE];
-    while (read(incoming_fd, &buffer, MAX_MESSAGE_SIZE) > 0)
+    while (read(incoming_fd, &buffer, MAX_MESSAGE_SIZE) > 0) {
         write(outgoing_fd, &buffer, MAX_MESSAGE_SIZE);
+    }
 
     close(incoming_fd);
 }
@@ -69,20 +71,34 @@ void write_time_spent(
         time_spent
     );
 
-    write(shared_fd, formated_text, sizeof(formated_text));
+    write(shared_fd, formated_text, strlen(formated_text));
     close_file(shared_fd);
 }
 
 int main(int argc, char **argv) {
     if (argc != 4) {
-        printf(
-            "usage: ./orchestrator output_folder parallel-tasks sched-policy\n"
-        );
+        char usage_buffer[65];
+        sprintf(usage_buffer, "usage: ./orchestrator output_folder parallel-tasks sched-policy\n");
+        write(STDOUT_FILENO, usage_buffer, 65);
+
         exit(EXIT_FAILURE);
     }
 
     char *folder_path = argv[1];
     int parallel_tasks = atoi(argv[2]);
+    SCHED_POLICY sched_policy;
+    if (strcmp(argv[3], "FCFS") == 0)
+        sched_policy = FCFS;
+    else if (strcmp(argv[3], "SJF") == 0)
+        sched_policy = SJF;
+    else {
+        char incorrect_flag_buffer[46];
+        sprintf(incorrect_flag_buffer, "Incorrect schedule policy. Usage: FCFS / SJF\n");
+        write(STDERR_FILENO, incorrect_flag_buffer, 46);
+        exit(EXIT_FAILURE);
+    }
+
+
 
     // Access determina as permissões de um ficheiro. Quando é usada a flag F_OK
     // é feito apenas um teste de existência. 0 se suceder, -1 se não.
@@ -91,7 +107,9 @@ int main(int argc, char **argv) {
     // cria fifo para receber a mensagem do cliente
     make_fifo(MAIN_FIFO_NAME);
 
-    printf("Server is running...\n");
+    char start_buffer[22];
+    sprintf(start_buffer, "Server is running...\n");
+    write(STDOUT_FILENO, start_buffer, 22);
 
     // abre fifo de modo de leitura
     int incoming_fd = open_file(MAIN_FIFO_NAME, O_RDONLY, 0);
@@ -129,8 +147,7 @@ int main(int argc, char **argv) {
                 );
             }
 
-            // ****** FALTA VERIFICAR NO ORCHESTRATOR QUAL A POLÍTICA A USAR ******
-            sort_by_SJF(messages_list.scheduled_messages, messages_list.scheduled_messages_size);
+            if (sched_policy == SJF) sort_by_SJF(messages_list.scheduled_messages, messages_list.scheduled_messages_size);
 
             Msg msg_to_execute = get_next_executing_message(&messages_list);
 
@@ -154,7 +171,9 @@ int main(int argc, char **argv) {
         }
     }
 
-    printf("Server shutting down...\n");
+    char shut_down_buffer[25];
+    sprintf(shut_down_buffer, "Server shutting down...\n");
+    write(STDOUT_FILENO, shut_down_buffer, 25);
 
     // fechar ficheiros
     close_file(incoming_fd);
