@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include "../include/messages.h"
 #include "../include/utils.h"
@@ -128,7 +129,8 @@ int main(int argc, char **argv) {
                 );
             }
 
-            //sort(POLICY);
+            // ****** FALTA VERIFICAR NO ORCHESTRATOR QUAL A POLÍTICA A USAR ******
+            sort_by_SJF(messages_list.scheduled_messages, messages_list.scheduled_messages_size);
 
             Msg msg_to_execute = get_next_executing_message(&messages_list);
 
