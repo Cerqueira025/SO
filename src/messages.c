@@ -10,7 +10,6 @@
 
 #include "../include/utils.h"
 
-typedef struct msg Msg;
 
 /*
  * Debater uso destas funções. Remover comentário se necessário.
@@ -71,7 +70,7 @@ void execute_message(int pid, char *exec_args[20], char *folder_path) {
     temp_fd = open_file(buf, O_CREAT | O_WRONLY, 0640);
 
     dup2(temp_fd, STDOUT_FILENO);
-    dup2(temp_fd, STDOUT_FILENO);
+    dup2(temp_fd, STDERR_FILENO);
     close(temp_fd);
 
     if (fork() == 0) {
@@ -84,7 +83,7 @@ void execute_message(int pid, char *exec_args[20], char *folder_path) {
     dup2(original_stderr_fd, STDERR_FILENO);
 
     if (WIFEXITED(status) && WEXITSTATUS(status) > 0) {
-        perror("execução correu mal");
+        perror("[ERROR] Execution failure\n");
         exit(EXIT_FAILURE);
     }
 }

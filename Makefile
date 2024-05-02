@@ -9,7 +9,7 @@ CC := gcc
 #	-Wdouble-promotion: "-Wdouble-promotion: This flag warns about implicit conversions that promote floating-point types to double. It helps catch potential precision loss issues."
 #	-Werror=vla: "This flag treats variable-length array (VLA) usage as an error. VLAs are a C99 feature that allows arrays to have a length that is determined at runtime. Using VLAs can sometimes lead to unexpected runtime behavior or vulnerabilities."
 #	-Wfatal-errors: "This flag causes the compiler to stop immediately after encountering the first error, rather than continuing with further compilation. It helps prevent the generation of potentially unreliable or incomplete executables."
-CFLAGS := -std=c11 -Wall -Wextra -Wdouble-promotion -Werror=pedantic -Werror=vla -pedantic-errors -Wfatal-errors
+CFLAGS := -std=c99 -Wall -Wextra -Wdouble-promotion -Werror=pedantic -Werror=vla -pedantic-errors -Wfatal-errors
 
 # Is debug mode enabled? - 0 = no
 DEBUG ?= 0
