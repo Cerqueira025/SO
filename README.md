@@ -19,5 +19,7 @@ DÚVIDA - pastas .bin
 DÚVIDA - criar também preentive priority
 DÚVIDA - que versão do c usar para livar dos warnings?
 DÚVIDA - devemos colocar aqui (utils.h) struct timeval para eliminar o erro na função calculcate_time_diff??
+DÚVIDA - qual o motivo dos warnings e erros ao compilar
+DÚVIDA - podemos guardar uma struct Msg no ficheiro partilhado ao invés de strings? (isto é util para resolver o problema com o status na parte de ler e escrever as tasks completas)
 
 ```
