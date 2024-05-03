@@ -10,14 +10,18 @@
 #include "../include/utils.h"
 
 void send_messages(Msg list[], int list_size, int outgoing_fd) {
-    char buffer[MAX_MESSAGE_SIZE];
+    Msg outgoing_msg, incoming_msg;
+    char buffer[MAX_PROGRAM_SIZE];
+
     for (int i = 0; i < list_size; i++) {
-        Msg msg = list[i];
-        if (sprintf(buffer, "%d %s\n", msg.pid, msg.program) < 0) {
+        incoming_msg = list[i];
+        if (sprintf(buffer, "%d %s\n", incoming_msg.pid, incoming_msg.program) < 0) {
             perror("[ERROR] sprintf:");
             exit(EXIT_FAILURE);
         }
-        write_file(outgoing_fd, buffer, MAX_MESSAGE_SIZE);
+
+        create_message(&outgoing_msg, -1, -1, -1, buffer, STATUS);
+        write_file(outgoing_fd, &outgoing_msg, sizeof(Msg));
     }
 }
 
@@ -25,9 +29,9 @@ void read_and_send_messages(char *shared_file_path, int outgoing_fd) {
     // usa-se a flag O_CREAT no caso deste ficheiro ainda não ter sido aberto
     int incoming_fd = open_file(shared_file_path, O_RDONLY | O_CREAT, 0777);
 
-    char buffer[MAX_MESSAGE_SIZE];
-    while (read_file(incoming_fd, &buffer, MAX_MESSAGE_SIZE) > 0) {
-        write_file(outgoing_fd, &buffer, MAX_MESSAGE_SIZE);
+    Msg incoming_and_outgoing_msg;
+    while (read_file(incoming_fd, &incoming_and_outgoing_msg, sizeof(Msg)) > 0) {
+        write_file(outgoing_fd, &incoming_and_outgoing_msg, sizeof(Msg));
     }
 
     close_file(incoming_fd);
@@ -38,19 +42,27 @@ void send_status_to_client(
 ) {
     int outgoing_fd = open_file_pid(message_pid, O_WRONLY, 0);
 
-    write_file(outgoing_fd, "Executing\n", MAX_MESSAGE_SIZE);
+    Msg msg_to_send;
+    create_message(&msg_to_send, -1, -1, -1, "Executing\n", STATUS);
+
+    write_file(outgoing_fd, &msg_to_send, sizeof(Msg));
+    
     send_messages(
         messages.executing_messages, messages.executing_messages_size,
         outgoing_fd
     );
 
-    write_file(outgoing_fd, "\nScheduled\n", MAX_MESSAGE_SIZE);
+    create_message(&msg_to_send, -1, -1, -1, "\nScheduled\n", STATUS);
+    write_file(outgoing_fd, &msg_to_send, sizeof(Msg));
+    
     send_messages(
         messages.scheduled_messages, messages.scheduled_messages_size,
         outgoing_fd
     );
 
-    write_file(outgoing_fd, "\nCompleted\n", MAX_MESSAGE_SIZE);
+    create_message(&msg_to_send, -1, -1, -1, "\nCompleted\n", STATUS);
+    write_file(outgoing_fd, &msg_to_send, sizeof(Msg));
+
     read_and_send_messages(shared_file_path, outgoing_fd);
 
     close_file(outgoing_fd);
@@ -68,16 +80,15 @@ void write_time_spent(
     int shared_fd =
         open_file(shared_file_path, O_WRONLY | O_APPEND | O_CREAT, 0777);
 
-    char formated_text[MAX_MESSAGE_SIZE];
-    if (sprintf(
-        formated_text, "%d %s %ld ms\n", msg_to_write.pid, msg_to_write.program,
-        time_spent
-    ) < 0) {
+    Msg formated_msg_to_write;
+    char formated_text[MAX_PROGRAM_SIZE];
+    if (sprintf(formated_text, "%d %s %ld ms\n", msg_to_write.pid, msg_to_write.program, time_spent) < 0) {
         perror("[ERROR] sprintf:");
         exit(EXIT_FAILURE);
     }
 
-    write_file(shared_fd, formated_text, strlen(formated_text));
+    create_message(&formated_msg_to_write, -1, -1, -1, formated_text, STATUS);
+    write_file(shared_fd, &formated_msg_to_write, sizeof(Msg));
     close_file(shared_fd);
 }
 

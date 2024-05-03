@@ -30,16 +30,20 @@ void receive_and_print_tasknum(char *server_to_client_fifo) {
 
 void receive_and_print_status(char *server_to_client_fifo) {
     // abrir fifo para receber o status
-    char buf[MAX_MESSAGE_SIZE];
     int incoming_fd = open_file(server_to_client_fifo, O_RDONLY, 0);
 
-    while (read_file(incoming_fd, buf, MAX_MESSAGE_SIZE) > 0) {
-        char status_buffer[MAX_MESSAGE_SIZE];
-        if (sprintf(status_buffer, "%s", buf) < 0) {
+    Msg incoming_msg;
+    char status_buffer[MAX_PROGRAM_SIZE];
+    while (read_file(incoming_fd, &incoming_msg, sizeof(Msg)) > 0) {
+        if (incoming_msg.type != STATUS) {
+            perror("[ERROR] message of incorrect type:");
+            exit(EXIT_FAILURE);
+        }
+        if (sprintf(status_buffer, "%s", incoming_msg.program) < 0) {
             perror("[ERROR] sprintf:");
             exit(EXIT_FAILURE);
         }
-        write_file(STDOUT_FILENO, buf, strlen(buf));
+        write_file(STDOUT_FILENO, status_buffer, strlen(status_buffer));
     }
 
     close_file(incoming_fd);

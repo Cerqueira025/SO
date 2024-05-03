@@ -11,6 +11,7 @@
 
 #define MAX_MESSAGE_NUMBER 100
 #define MAX_MESSAGE_SIZE 350
+#define MAX_PROGRAM_SIZE 300
 #define MAX_STRING_SIZE 200
 #define MAX_PIPE_NUMBER 20
 
@@ -28,7 +29,7 @@ typedef struct msg {
     int child_pid;
     int time;
     int is_pipe;
-    char program[300]; /*DUVIDA - fixed size de 300 ou não?*/
+    char program[MAX_PROGRAM_SIZE];
     MESSAGE_TYPE type;
 } Msg;
 
