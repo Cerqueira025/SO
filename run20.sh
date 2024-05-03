@@ -13,7 +13,6 @@ run_tests() {
         sleep_time=$(random_sleep)
         ms_time=$((sleep_time * 1000))
 
-        echo "Running test $i: ./client execute -u $ms_time sleep $sleep_time"
         ./client execute $ms_time -u "sleep $sleep_time"
     done
 

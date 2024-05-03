@@ -4,7 +4,6 @@ Trabalho Prático - Orquestrador de Tarefas
 TODO:
 ```
 - RESOLVER PROBLEMA STATUS
-- dar free do toFree de cada parse, dentro do ciclo for, no execute_pipe_message
 - Ver casos de exceção
 - rever exit(EXIT_FAILURE)
 - melhorar script para testes
@@ -15,11 +14,20 @@ TODO:
 - Verificar/mudar organização de funções
 - ver todas as funções que devolvem valores
 
-DÚVIDA - pastas .bin
+Rapidas :
 DÚVIDA - criar também preentive priority
-DÚVIDA - que versão do c usar para livar dos warnings?
+DÚVIDA - pastas .bin
 DÚVIDA - devemos colocar aqui (utils.h) struct timeval para eliminar o erro na função calculcate_time_diff??
-DÚVIDA - qual o motivo dos warnings e erros ao compilar
+DÚVIDA - Podemos ter "perror" // SIM
+DÚVIDA - é muito grave ter "ls|wc" em vez de "ls | wc"?
+
+
+
+
 DÚVIDA - podemos guardar uma struct Msg no ficheiro partilhado ao invés de strings? (isto é util para resolver o problema com o status na parte de ler e escrever as tasks completas)
+DÚVIDA - que versão do c usar para livar dos warnings?
+DÚVIDA - qual o motivo dos warnings e erros ao compilar
+DÚVIDA - PIPELINE ESTÁ MAL
+
 
 ```

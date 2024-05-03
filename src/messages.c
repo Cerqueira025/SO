@@ -68,7 +68,7 @@ void execute_message(int pid, char *exec_args[20], char *folder_path) {
 
     dup2(temp_fd, STDOUT_FILENO);
     dup2(temp_fd, STDERR_FILENO);
-    close(temp_fd);
+    close_file(temp_fd);
 
     if (fork() == 0) {
         execvp(exec_args[0], exec_args);
@@ -80,7 +80,7 @@ void execute_message(int pid, char *exec_args[20], char *folder_path) {
     dup2(original_stderr_fd, STDERR_FILENO);
 
     if (WIFEXITED(status) && WEXITSTATUS(status) > 0) {
-        perror("[ERROR] Execution failure\n");
+        perror("[ERROR] Execution failure:");
         exit(EXIT_FAILURE);
     }
 }
@@ -90,6 +90,7 @@ void execute_pipe_message(
 ) {
     int num_pipes = number_args - 1;
     int pipes[MAX_PIPE_NUMBER][2];
+    char *tofree[MAX_PIPE_NUMBER];
 
     char buf[30];
     sprintf(buf, "%s/task_%d.bin", folder_path, message_pid);
@@ -107,30 +108,28 @@ void execute_pipe_message(
             char *command_args[20];
             char *formatter = " ";
 
-            /* o facto de não ter um inteiro a receber o valor do número de argumentos
-            *  e sim o NULL que nós tinhamos, levava ao programa não funcionar
-            */
             int number_args_commands = 0;
-            parse_program(
+            tofree[i] = parse_program(
                 exec_args[i], command_args, formatter, &number_args_commands
             );
 
             if (i > 0) {
                 dup2(pipes[i - 1][0], 0);
-                close(pipes[i - 1][0]);
+                close_file(pipes[i - 1][0]);
             }
             if (i < num_pipes) {
                 dup2(pipes[i][1], 1);
-                close(pipes[i][1]);
+                close_file(pipes[i][1]);
             } else {
                 dup2(temp_fd, 1); // std_out
                 dup2(temp_fd, 2); // std_err
-                close(temp_fd);
+                close_file(temp_fd);
             }
 
             for (int j = 0; j < num_pipes; j++) {
-                close(pipes[j][0]);
-                close(pipes[j][1]);
+                printf("%d - %d\n", pipes[j][0], pipes[j][1]);
+                close_file(pipes[j][0]);
+                close_file(pipes[j][1]);
             }
 
             execvp(command_args[0], command_args);
@@ -139,12 +138,18 @@ void execute_pipe_message(
     }
 
     for (int i = 0; i < num_pipes; i++) {
-        close(pipes[i][0]);
-        close(pipes[i][1]);
+        close_file(pipes[i][0]);
+        close_file(pipes[i][1]);
     }
+    
+    tofree[number_args] = NULL;
+    for (int j = 0; tofree[j] != NULL; j++) free(tofree[j]);
 
     for (int i = 0; i < number_args; i++) {
-        wait(NULL);
+        int status;
+        wait(&status);
+        if (WIFEXITED(status) && WEXITSTATUS(status) > 0)
+            perror("[ERROR] Execution failure:");
     }
 }
 
@@ -152,6 +157,8 @@ long parse_and_execute_message(Msg *msg_to_handle, char *folder_path) {
     int number_args;
     char *exec_args[20];
     char *formatter = msg_to_handle->is_pipe ? "|" : " ";
+
+    // este é o primeiro parse, que funcionar para mensagens do tipo pipe ou singular.
     char *tofree = parse_program(
         msg_to_handle->program, exec_args, formatter, &number_args
     );
@@ -160,10 +167,13 @@ long parse_and_execute_message(Msg *msg_to_handle, char *folder_path) {
     gettimeofday(&time_before, NULL);
 
     if (msg_to_handle->is_pipe)
+        // nesta função, usa-se novamente "parse_program()", mas a string que esta devolve 
+        // leva um "free" dentro desta função.
         execute_pipe_message(
             msg_to_handle->pid, exec_args, folder_path, number_args
         );
     else
+        // nesta função não se usa "parse_program()"
         execute_message(msg_to_handle->pid, exec_args, folder_path);
 
     gettimeofday(&time_after, NULL);

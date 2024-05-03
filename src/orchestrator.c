@@ -14,7 +14,7 @@ void send_messages(Msg list[], int list_size, int outgoing_fd) {
     for (int i = 0; i < list_size; i++) {
         Msg msg = list[i];
         sprintf(buffer, "%d %s\n", msg.pid, msg.program);
-        write(outgoing_fd, buffer, MAX_MESSAGE_SIZE);
+        write_file(outgoing_fd, buffer, MAX_MESSAGE_SIZE);
     }
 }
 
@@ -24,10 +24,10 @@ void read_and_send_messages(char *shared_file_path, int outgoing_fd) {
 
     char buffer[MAX_MESSAGE_SIZE];
     while (read(incoming_fd, &buffer, MAX_MESSAGE_SIZE) > 0) {
-        write(outgoing_fd, &buffer, MAX_MESSAGE_SIZE);
+        write_file(outgoing_fd, &buffer, MAX_MESSAGE_SIZE);
     }
 
-    close(incoming_fd);
+    close_file(incoming_fd);
 }
 
 void send_status_to_client(
@@ -35,28 +35,28 @@ void send_status_to_client(
 ) {
     int outgoing_fd = open_file_pid(message_pid, O_WRONLY, 0);
 
-    write(outgoing_fd, "Executing\n", MAX_MESSAGE_SIZE);
+    write_file(outgoing_fd, "Executing\n", MAX_MESSAGE_SIZE);
     send_messages(
         messages.executing_messages, messages.executing_messages_size,
         outgoing_fd
     );
 
-    write(outgoing_fd, "\nScheduled\n", MAX_MESSAGE_SIZE);
+    write_file(outgoing_fd, "\nScheduled\n", MAX_MESSAGE_SIZE);
     send_messages(
         messages.scheduled_messages, messages.scheduled_messages_size,
         outgoing_fd
     );
 
-    write(outgoing_fd, "\nCompleted\n", MAX_MESSAGE_SIZE);
+    write_file(outgoing_fd, "\nCompleted\n", MAX_MESSAGE_SIZE);
     read_and_send_messages(shared_file_path, outgoing_fd);
 
-    close(outgoing_fd);
+    close_file(outgoing_fd);
 }
 
 void send_task_number_to_client(int message_pid) {
     int outgoing_fd = open_file_pid(message_pid, O_WRONLY, 0);
-    write(outgoing_fd, &message_pid, sizeof(message_pid));
-    close(outgoing_fd);
+    write_file(outgoing_fd, &message_pid, sizeof(message_pid));
+    close_file(outgoing_fd);
 }
 
 void write_time_spent(
@@ -71,16 +71,13 @@ void write_time_spent(
         time_spent
     );
 
-    write(shared_fd, formated_text, strlen(formated_text));
+    write_file(shared_fd, formated_text, strlen(formated_text));
     close_file(shared_fd);
 }
 
 int main(int argc, char **argv) {
     if (argc != 4) {
-        char usage_buffer[65];
-        sprintf(usage_buffer, "usage: ./orchestrator output_folder parallel-tasks sched-policy\n");
-        write(STDOUT_FILENO, usage_buffer, 65);
-
+        write_file(STDOUT_FILENO, "usage: ./orchestrator output_folder parallel-tasks sched-policy\n", 65);
         exit(EXIT_FAILURE);
     }
 
@@ -92,9 +89,7 @@ int main(int argc, char **argv) {
     else if (strcmp(argv[3], "SJF") == 0)
         sched_policy = SJF;
     else {
-        char incorrect_flag_buffer[46];
-        sprintf(incorrect_flag_buffer, "Incorrect schedule policy. Usage: FCFS / SJF\n");
-        write(STDERR_FILENO, incorrect_flag_buffer, 46);
+        write_file(STDERR_FILENO, "Incorrect schedule policy. Usage: FCFS / SJF\n", 46);
         exit(EXIT_FAILURE);
     }
 
@@ -107,9 +102,7 @@ int main(int argc, char **argv) {
     // cria fifo para receber a mensagem do cliente
     make_fifo(MAIN_FIFO_NAME);
 
-    char start_buffer[22];
-    sprintf(start_buffer, "Server is running...\n");
-    write(STDOUT_FILENO, start_buffer, 22);
+    write_file(STDOUT_FILENO, "Server is running...\n", 22);
 
     // abre fifo de modo de leitura
     int incoming_fd = open_file(MAIN_FIFO_NAME, O_RDONLY, 0);
@@ -164,16 +157,14 @@ int main(int argc, char **argv) {
 
                     // a mensagem já tem tipo COMPLETED e o pid refere-se a ESTE processo
                     msg_to_execute.child_pid = getpid();
-                    write(aux_fd, &msg_to_execute, sizeof(msg_to_execute));
+                    write_file(aux_fd, &msg_to_execute, sizeof(msg_to_execute));
                     exit(0);
                 }
             }
         }
     }
 
-    char shut_down_buffer[25];
-    sprintf(shut_down_buffer, "Server shutting down...\n");
-    write(STDOUT_FILENO, shut_down_buffer, 25);
+    write_file(STDOUT_FILENO, "Server shutting down...\n", 25);
 
     // fechar ficheiros
     close_file(incoming_fd);

@@ -9,7 +9,7 @@
 
 void send_message_to_server(Msg msg_to_send) {
     int outgoing_fd = open_file(MAIN_FIFO_NAME, O_WRONLY, 0);
-    write(outgoing_fd, &msg_to_send, sizeof(Msg));
+    write_file(outgoing_fd, &msg_to_send, sizeof(Msg));
     close_file(outgoing_fd);
 }
 
@@ -18,11 +18,11 @@ void receive_and_print_tasknum(char *server_to_client_fifo) {
     int tasknum;
     int incoming_fd = open_file(server_to_client_fifo, O_RDONLY, 0);
     read(incoming_fd, &tasknum, sizeof(tasknum));
-    close(incoming_fd);
+    close_file(incoming_fd);
 
-    char tasknum_buffer[21];
+    char tasknum_buffer[50];
     sprintf(tasknum_buffer, "TASK %d Received\n", tasknum);
-    write(STDOUT_FILENO, tasknum_buffer, 21);
+    write_file(STDOUT_FILENO, tasknum_buffer, strlen(tasknum_buffer));
 }
 
 void receive_and_print_status(char *server_to_client_fifo) {
@@ -33,17 +33,15 @@ void receive_and_print_status(char *server_to_client_fifo) {
     while (read(incoming_fd, buf, MAX_MESSAGE_SIZE) > 0) {
         char status_buffer[MAX_MESSAGE_SIZE];
         sprintf(status_buffer, "%s", buf);
-        write(STDOUT_FILENO, buf, strlen(buf));
+        write_file(STDOUT_FILENO, buf, strlen(buf));
     }
 
-    close(incoming_fd);
+    close_file(incoming_fd);
 }
 
 int main(int argc, char **argv) {
     if (argc != 2 && argc != 5) {
-        char usage_buffer[98];
-        sprintf(usage_buffer, "Usage:\n    ./client execute time -u 'prog-a [args]'\n    ./client status\n    ./client server-stop\n");
-        write(STDOUT_FILENO, usage_buffer, 98);
+        write_file(STDOUT_FILENO, "Usage:\n    ./client execute time(ms) -u 'prog-a arg-1 (...) arg-n'\n    ./client execute time(ms) -p 'prog-a arg-1 (...) arg-n|prog-b arg-1 (...) arg-n|prog-c arg-1 (...) arg-n'\n    ./client status\n    ./client server-stop\n", 223);
         exit(EXIT_FAILURE);
     }
 
@@ -67,9 +65,7 @@ int main(int argc, char **argv) {
         else if (strcmp(argv[3], "-p") == 0)
             ispipe = 1;
         else {
-            char incorrect_flag_buffer[32];
-            sprintf(incorrect_flag_buffer, "Incorrect flag. Usage: -u / -p\n");
-            write(STDERR_FILENO, incorrect_flag_buffer, 32);
+            write_file(STDERR_FILENO, "Incorrect flag. Usage: -u / -p\n", 32);
             exit(EXIT_FAILURE);
         }
 
@@ -98,15 +94,11 @@ int main(int argc, char **argv) {
 
         send_message_to_server(msg_to_send);
 
-        char shut_down_buffer[25];
-        sprintf(shut_down_buffer, "Server shutting down...\n");
-        write(STDOUT_FILENO, shut_down_buffer, 25);
+        write_file(STDOUT_FILENO, "Server shutting down...\n", 25);
     }
 
     else {
-        char incorrect_option_buffer[19];
-        sprintf(incorrect_option_buffer, "Incorrect option!\n");
-        write(STDOUT_FILENO, incorrect_option_buffer, 19);
+        write_file(STDOUT_FILENO, "Incorrect option. Usage: execute / status / server-stop\n", 57);
     }
 
     // apagar fifo

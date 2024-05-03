@@ -51,6 +51,13 @@ void close_file(int fd) {
     }
 }
 
+void write_file(int outgoing_fd, const void *msg_to_send, size_t n_byes) {
+    if (write(outgoing_fd, msg_to_send, n_byes) == -1) {
+        perror("[ERROR] write:");
+        exit(EXIT_FAILURE);
+    }
+}
+
 void exec_command(char **exec_args) {
     if (execvp(exec_args[0], exec_args) == -1) {
         perror("execvp");

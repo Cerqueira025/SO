@@ -19,4 +19,6 @@ int open_file_pid(int message_pid, int flags, mode_t mode);
 
 void close_file(int fd);
 
+void write_file(int outgoing_fd, const void *msg_to_send, size_t n_byes);
+
 long calculate_time_diff(struct timeval time_before, struct timeval time_after);
