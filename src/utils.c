@@ -1,9 +1,4 @@
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <sys/time.h>
+#include "../include/utils.h"
 
 void create_folder(char *folder_path) {
     if (access(folder_path, F_OK) == -1) {
@@ -56,6 +51,15 @@ void write_file(int outgoing_fd, const void *msg_to_send, size_t n_byes) {
         perror("[ERROR] write:");
         exit(EXIT_FAILURE);
     }
+}
+
+int read_file(int outgoing_fd, void *msg_to_send, size_t n_byes) {
+    int read_bytes = 0;
+    if ((read_bytes = read(outgoing_fd, msg_to_send, n_byes)) == -1) {
+        perror("[ERROR] read:");
+        exit(EXIT_FAILURE);
+    }
+    return read_bytes;
 }
 
 void exec_command(char **exec_args) {

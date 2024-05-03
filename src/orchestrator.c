@@ -23,7 +23,7 @@ void read_and_send_messages(char *shared_file_path, int outgoing_fd) {
     int incoming_fd = open_file(shared_file_path, O_RDONLY | O_CREAT, 0777);
 
     char buffer[MAX_MESSAGE_SIZE];
-    while (read(incoming_fd, &buffer, MAX_MESSAGE_SIZE) > 0) {
+    while (read_file(incoming_fd, &buffer, MAX_MESSAGE_SIZE) > 0) {
         write_file(outgoing_fd, &buffer, MAX_MESSAGE_SIZE);
     }
 
@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
     Msg_list messages_list;
     create_messages_list(&messages_list, parallel_tasks);
 
-    while (read(incoming_fd, &message_received, sizeof(Msg)) &&
+    while (read_file(incoming_fd, &message_received, sizeof(Msg)) &&
            (message_received.type != STOP)) {
         if (message_received.type == STATUS)
             send_status_to_client(

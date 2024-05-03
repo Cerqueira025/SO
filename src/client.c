@@ -17,7 +17,7 @@ void receive_and_print_tasknum(char *server_to_client_fifo) {
     // abrir fifo para receber o número da tarefa
     int tasknum;
     int incoming_fd = open_file(server_to_client_fifo, O_RDONLY, 0);
-    read(incoming_fd, &tasknum, sizeof(tasknum));
+    read_file(incoming_fd, &tasknum, sizeof(tasknum));
     close_file(incoming_fd);
 
     char tasknum_buffer[50];
@@ -30,7 +30,7 @@ void receive_and_print_status(char *server_to_client_fifo) {
     char buf[MAX_MESSAGE_SIZE];
     int incoming_fd = open_file(server_to_client_fifo, O_RDONLY, 0);
 
-    while (read(incoming_fd, buf, MAX_MESSAGE_SIZE) > 0) {
+    while (read_file(incoming_fd, buf, MAX_MESSAGE_SIZE) > 0) {
         char status_buffer[MAX_MESSAGE_SIZE];
         sprintf(status_buffer, "%s", buf);
         write_file(STDOUT_FILENO, buf, strlen(buf));

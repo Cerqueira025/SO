@@ -1,6 +1,14 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H
 
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/time.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
 #define MAX_MESSAGE_NUMBER 100
 #define MAX_MESSAGE_SIZE 350
 #define MAX_STRING_SIZE 200
