@@ -3,7 +3,7 @@
 void create_folder(char *folder_path) {
     if (access(folder_path, F_OK) == -1) {
         if (mkdir(folder_path, 0777) == -1) {
-            perror("mkdir");
+            perror("[ERROR] mkdir:");
             exit(EXIT_FAILURE);
         }
     }
@@ -11,7 +11,7 @@ void create_folder(char *folder_path) {
 
 void make_fifo(char *fifo_name) {
     if (mkfifo(fifo_name, 0666) == -1) {
-        perror("mkfifo");
+        perror("[ERROR] mkfifo:");
         exit(EXIT_FAILURE);
     }
 }
@@ -24,7 +24,7 @@ int open_file(char *file_name, int flags, mode_t mode) {
         fd = open(file_name, flags, mode);
 
     if (fd == -1) {
-        perror("open");
+        perror("[ERROR] open:");
         exit(EXIT_FAILURE);
     }
 
@@ -33,7 +33,10 @@ int open_file(char *file_name, int flags, mode_t mode) {
 
 int open_file_pid(int message_pid, int flags, mode_t mode) {
     char buffer[20];
-    sprintf(buffer, "fifo_%d", message_pid);
+    if (sprintf(buffer, "fifo_%d", message_pid) < 0) {
+        perror("[ERROR] sprintf:");
+        exit(EXIT_FAILURE);
+    }
     int outgoing_fd = open_file(buffer, flags, mode);
 
     return outgoing_fd;
@@ -41,7 +44,7 @@ int open_file_pid(int message_pid, int flags, mode_t mode) {
 
 void close_file(int fd) {
     if (close(fd) == -1) {
-        perror("close");
+        perror("[ERROR] close:");
         exit(EXIT_FAILURE);
     }
 }
@@ -53,9 +56,9 @@ void write_file(int outgoing_fd, const void *msg_to_send, size_t n_byes) {
     }
 }
 
-int read_file(int outgoing_fd, void *msg_to_send, size_t n_byes) {
+int read_file(int outgoing_fd, void *msg_to_read, size_t n_byes) {
     int read_bytes = 0;
-    if ((read_bytes = read(outgoing_fd, msg_to_send, n_byes)) == -1) {
+    if ((read_bytes = read(outgoing_fd, msg_to_read, n_byes)) == -1) {
         perror("[ERROR] read:");
         exit(EXIT_FAILURE);
     }
@@ -64,7 +67,7 @@ int read_file(int outgoing_fd, void *msg_to_send, size_t n_byes) {
 
 void exec_command(char **exec_args) {
     if (execvp(exec_args[0], exec_args) == -1) {
-        perror("execvp");
+        perror("[ERROR] execvp:");
         exit(EXIT_FAILURE);
     }
 }

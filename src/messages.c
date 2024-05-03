@@ -47,31 +47,28 @@ char *parse_program(
 }
 
 void execute_message(int pid, char *exec_args[20], char *folder_path) {
-    int status = 0, original_stdout_fd = -1, original_stderr_fd = -1,
-        temp_fd = -1;
-
-    original_stdout_fd = dup(STDOUT_FILENO);
-    original_stderr_fd = dup(STDERR_FILENO);
+    int status = 0, temp_fd = -1;
 
     char buf[30];
-    sprintf(buf, "%s/task_%d.bin", folder_path, pid);
+    if (sprintf(buf, "%s/task_%d.bin", folder_path, pid) < 0) {
+        perror("[ERROR] sprintf:");
+        exit(EXIT_FAILURE);
+    }
     temp_fd = open_file(buf, O_CREAT | O_WRONLY, 0640);
 
-    dup2(temp_fd, STDOUT_FILENO);
-    dup2(temp_fd, STDERR_FILENO);
-    close_file(temp_fd);
-
     if (fork() == 0) {
+        dup2(temp_fd, STDOUT_FILENO);
+        dup2(temp_fd, STDERR_FILENO);
+        close_file(temp_fd);
         execvp(exec_args[0], exec_args);
         _exit(255);
     }
+
+    close_file(temp_fd);
     wait(&status);
 
-    dup2(original_stdout_fd, STDOUT_FILENO);
-    dup2(original_stderr_fd, STDERR_FILENO);
-
     if (WIFEXITED(status) && WEXITSTATUS(status) > 0) {
-        perror("[ERROR] Execution failure:");
+        perror("[ERROR] fork execution failure:");
         exit(EXIT_FAILURE);
     }
 }
@@ -84,12 +81,15 @@ void execute_pipe_message(
     char *tofree[MAX_PIPE_NUMBER];
 
     char buf[30];
-    sprintf(buf, "%s/task_%d.bin", folder_path, message_pid);
+    if (sprintf(buf, "%s/task_%d.bin", folder_path, message_pid)) {
+        perror("[ERROR] sprintf:");
+        exit(EXIT_FAILURE);
+    }
     int temp_fd = open_file(buf, O_CREAT | O_WRONLY, 0640);
 
     for (int i = 0; i < num_pipes; i++) {
         if (pipe(pipes[i]) < 0) {
-            perror("pipe error");
+            perror("[ERROR] pipe error:");
             exit(EXIT_FAILURE);
         }
     }
@@ -118,7 +118,6 @@ void execute_pipe_message(
             }
 
             for (int j = 0; j < num_pipes; j++) {
-                printf("%d - %d\n", pipes[j][0], pipes[j][1]);
                 close_file(pipes[j][0]);
                 close_file(pipes[j][1]);
             }
@@ -140,7 +139,7 @@ void execute_pipe_message(
         int status;
         wait(&status);
         if (WIFEXITED(status) && WEXITSTATUS(status) > 0)
-            perror("[ERROR] Execution failure:");
+            perror("[ERROR] fork execution failure:");
     }
 }
 
@@ -155,7 +154,10 @@ long parse_and_execute_message(Msg *msg_to_handle, char *folder_path) {
     );
 
     struct timeval time_before, time_after;
-    gettimeofday(&time_before, NULL);
+    if (gettimeofday(&time_before, NULL) < 0) {
+        perror("[ERROR] gettimeofday:");
+        exit(EXIT_FAILURE);
+    }
 
     if (msg_to_handle->is_pipe)
         // nesta função, usa-se novamente "parse_program()", mas a string que esta devolve 
@@ -187,7 +189,7 @@ void insert_scheduled_messages_list(
     Msg_list *messages_list, Msg message_to_insert
 ) {
     if (message_to_insert.type != SCHEDULED) {
-        perror("message incorrect type");
+        perror("[ERROR] message of incorrect type:");
         exit(EXIT_FAILURE);
     }
     messages_list

@@ -4,7 +4,6 @@ Trabalho Prático - Orquestrador de Tarefas
 TODO:
 ```
 - RESOLVER PROBLEMA STATUS
-- Ver casos de exceção
 - rever exit(EXIT_FAILURE)
 - melhorar script para testes
 - pastas .bin

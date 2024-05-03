@@ -21,7 +21,10 @@ void receive_and_print_tasknum(char *server_to_client_fifo) {
     close_file(incoming_fd);
 
     char tasknum_buffer[50];
-    sprintf(tasknum_buffer, "TASK %d Received\n", tasknum);
+    if (sprintf(tasknum_buffer, "TASK %d Received\n", tasknum) < 0) {
+        perror("[ERROR] sprintf:");
+        exit(EXIT_FAILURE);
+    }
     write_file(STDOUT_FILENO, tasknum_buffer, strlen(tasknum_buffer));
 }
 
@@ -32,7 +35,10 @@ void receive_and_print_status(char *server_to_client_fifo) {
 
     while (read_file(incoming_fd, buf, MAX_MESSAGE_SIZE) > 0) {
         char status_buffer[MAX_MESSAGE_SIZE];
-        sprintf(status_buffer, "%s", buf);
+        if (sprintf(status_buffer, "%s", buf) < 0) {
+            perror("[ERROR] sprintf:");
+            exit(EXIT_FAILURE);
+        }
         write_file(STDOUT_FILENO, buf, strlen(buf));
     }
 
@@ -49,7 +55,10 @@ int main(int argc, char **argv) {
 
     // cria fifo para receber a resposta do servidor com o pid
     char server_to_client_fifo[20];
-    sprintf(server_to_client_fifo, "fifo_%d", pid);
+    if (sprintf(server_to_client_fifo, "fifo_%d", pid) < 0) {
+        perror("[ERROR] sprintf:");
+        exit(EXIT_FAILURE);
+    }
     make_fifo(server_to_client_fifo);
 
     // preparar mensagem a enviar para o servidor
@@ -57,7 +66,7 @@ int main(int argc, char **argv) {
 
     /*-----------EXECUTE------------*/
     if (strcmp(argv[1], "execute") == 0) {
-        int time = atoi(argv[2]);
+        int time = atoi(argv[2]); // REVER
 
         int ispipe = -1;
         if (strcmp(argv[3], "-u") == 0)
@@ -70,7 +79,7 @@ int main(int argc, char **argv) {
         }
 
         char program[300];
-        strcpy(program, argv[4]);
+        strcpy(program, argv[4]); // REVER
 
         create_message(&msg_to_send, pid, time, ispipe, program, SCHEDULED);
 
@@ -103,7 +112,7 @@ int main(int argc, char **argv) {
 
     // apagar fifo
     if (unlink(server_to_client_fifo) == -1) {
-        perror("unlink");
+        perror("[ERROR] unlink:");
         exit(EXIT_FAILURE);
     }
 

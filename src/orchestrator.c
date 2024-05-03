@@ -13,7 +13,10 @@ void send_messages(Msg list[], int list_size, int outgoing_fd) {
     char buffer[MAX_MESSAGE_SIZE];
     for (int i = 0; i < list_size; i++) {
         Msg msg = list[i];
-        sprintf(buffer, "%d %s\n", msg.pid, msg.program);
+        if (sprintf(buffer, "%d %s\n", msg.pid, msg.program) < 0) {
+            perror("[ERROR] sprintf:");
+            exit(EXIT_FAILURE);
+        }
         write_file(outgoing_fd, buffer, MAX_MESSAGE_SIZE);
     }
 }
@@ -66,10 +69,13 @@ void write_time_spent(
         open_file(shared_file_path, O_WRONLY | O_APPEND | O_CREAT, 0777);
 
     char formated_text[MAX_MESSAGE_SIZE];
-    sprintf(
+    if (sprintf(
         formated_text, "%d %s %ld ms\n", msg_to_write.pid, msg_to_write.program,
         time_spent
-    );
+    ) < 0) {
+        perror("[ERROR] sprintf:");
+        exit(EXIT_FAILURE);
+    }
 
     write_file(shared_fd, formated_text, strlen(formated_text));
     close_file(shared_fd);
@@ -82,7 +88,7 @@ int main(int argc, char **argv) {
     }
 
     char *folder_path = argv[1];
-    int parallel_tasks = atoi(argv[2]);
+    int parallel_tasks = atoi(argv[2]); // REVER
     SCHED_POLICY sched_policy;
     if (strcmp(argv[3], "FCFS") == 0)
         sched_policy = FCFS;
@@ -92,7 +98,6 @@ int main(int argc, char **argv) {
         write_file(STDERR_FILENO, "Incorrect schedule policy. Usage: FCFS / SJF\n", 46);
         exit(EXIT_FAILURE);
     }
-
 
 
     // Access determina as permissões de um ficheiro. Quando é usada a flag F_OK
@@ -111,7 +116,10 @@ int main(int argc, char **argv) {
 
     // criar e abrir o ficheiro partilhado que terá os IDs e tempos de execução
     char shared_file_path[50];
-    sprintf(shared_file_path, "%s/tasks_info.txt", folder_path);
+    if (sprintf(shared_file_path, "%s/tasks_info.txt", folder_path) < 0) {
+        perror("[ERROR] sprintf:");
+        exit(EXIT_FAILURE);
+    }
 
     // inicialização de variáveis
     Msg message_received;
@@ -125,7 +133,7 @@ int main(int argc, char **argv) {
                 messages_list, message_received.pid, shared_file_path
             );
         else {
-            // pai apanha o processo filho
+            // pai recolhe o processo filho
             if (message_received.type == COMPLETED) {
                 waitpid(message_received.child_pid, NULL, WUNTRACED);
                 delete_from_executing_messages_list(
@@ -172,7 +180,7 @@ int main(int argc, char **argv) {
 
     // apagar o pipe com nome
     if (unlink(MAIN_FIFO_NAME) == -1) {
-        perror("unlink");
+        perror("[ERROR] unlink:");
         exit(EXIT_FAILURE);
     }
 
