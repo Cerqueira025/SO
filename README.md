@@ -3,8 +3,6 @@ Trabalho Prático - Orquestrador de Tarefas
 
 TODO:
 ```
-- rever exit(EXIT_FAILURE)
-- melhorar script para testes
 - pastas .bin
 - PIPELINE ESTÁ MAL
 

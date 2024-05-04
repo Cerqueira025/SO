@@ -93,8 +93,8 @@ void write_time_spent(
 }
 
 int main(int argc, char **argv) {
-    if (argc != 4) {
-        write_file(STDOUT_FILENO, "usage: ./orchestrator output_folder parallel-tasks sched-policy\n", 65);
+    if (argc != 4 && argc != 5) {
+        write_file(STDOUT_FILENO, "usage: ./orchestrator output_folder parallel-tasks sched-policy <test-mode>\n", 77);
         exit(EXIT_FAILURE);
     }
 
@@ -106,9 +106,22 @@ int main(int argc, char **argv) {
     else if (strcmp(argv[3], "SJF") == 0)
         sched_policy = SJF;
     else {
-        write_file(STDERR_FILENO, "Incorrect schedule policy. Usage: FCFS / SJF\n", 46);
+        perror("Incorrect schedule policy. Usage: FCFS / SJF");
         exit(EXIT_FAILURE);
     }
+
+    int is_testing = -1;
+    if (argv[4] != NULL) {
+        if (strcmp(argv[4], "test-mode") == 0) {
+            is_testing = 20;
+            write_file(STDOUT_FILENO, "Test mode enabled\n", 19);
+        } 
+        else {
+            perror("Incorrect test-mode. Usage: test-mode");
+            exit(EXIT_FAILURE);
+        }
+    }
+
 
 
     // Access determina as permissões de um ficheiro. Quando é usada a flag F_OK
@@ -125,6 +138,14 @@ int main(int argc, char **argv) {
     // aberto em modo de write para haver bloqueio no read
     int aux_fd = open_file(MAIN_FIFO_NAME, O_WRONLY, 0);
 
+    struct timeval time_before, time_after;
+    if (is_testing > 0) {
+        if (gettimeofday(&time_before, NULL) < 0) {
+        perror("[ERROR] gettimeofday:");
+        exit(EXIT_FAILURE);
+        }
+    }
+
     // criar e abrir o ficheiro partilhado que terá os IDs e tempos de execução
     char shared_file_path[50];
     if (sprintf(shared_file_path, "%s/tasks_info.txt", folder_path) < 0) {
@@ -137,19 +158,15 @@ int main(int argc, char **argv) {
     Msg_list messages_list;
     create_messages_list(&messages_list, parallel_tasks);
 
-    while (read_file(incoming_fd, &message_received, sizeof(Msg)) &&
-           (message_received.type != STOP)) {
-        if (message_received.type == STATUS)
-            send_status_to_client(
-                messages_list, message_received.pid, shared_file_path
-            );
+    while (read_file(incoming_fd, &message_received, sizeof(Msg)) && (message_received.type != STOP) && is_testing != 0) {
+        if (message_received.type == STATUS) 
+            send_status_to_client(messages_list, message_received.pid, shared_file_path);
         else {
             // pai recolhe o processo filho
             if (message_received.type == COMPLETED) {
                 waitpid(message_received.child_pid, NULL, WUNTRACED);
-                delete_from_executing_messages_list(
-                    &messages_list, message_received.pid
-                );
+                delete_from_executing_messages_list(&messages_list, message_received.pid);
+                if (is_testing > 0) is_testing--;
             } else {
                 // enviar o numero do tarefa através do fifo criado pelo cliente
                 send_task_number_to_client(message_received.pid);
@@ -184,6 +201,21 @@ int main(int argc, char **argv) {
     }
 
     write_file(STDOUT_FILENO, "Server shutting down...\n", 25);
+
+    if (is_testing == 0) {
+        if (gettimeofday(&time_after, NULL) < 0) {
+            perror("[ERROR] gettimeofday:");
+            exit(EXIT_FAILURE);
+        }
+
+        long time_spent = calculate_time_diff(time_before, time_after);
+        char time_spent_buffer[50];
+        if (sprintf(time_spent_buffer, "Took %ld ms to execute 20 tasks\n", time_spent) < 0) {
+            perror("[ERROR] sprintf:");
+            exit(EXIT_FAILURE);
+        }
+        write_file(STDOUT_FILENO, time_spent_buffer, strlen(time_spent_buffer));
+    }
 
     // fechar ficheiros
     close_file(incoming_fd);

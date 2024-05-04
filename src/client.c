@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
         else if (strcmp(argv[3], "-p") == 0)
             ispipe = 1;
         else {
-            write_file(STDERR_FILENO, "Incorrect flag. Usage: -u / -p\n", 32);
+            perror("Incorrect flag. Usage: -u / -p");
             exit(EXIT_FAILURE);
         }
 

@@ -20,6 +20,10 @@ void set_message_time(Msg msg, int time) {
 void create_message(
     Msg *msg, int pid, int time, int is_pipe, char *program, MESSAGE_TYPE type
 ) {
+    if (msg == NULL) {
+        perror("[ERROR] invalid message:");
+        exit(EXIT_FAILURE);
+    }
     msg->pid = pid;
     msg->time = time;
     msg->is_pipe = is_pipe;
@@ -169,7 +173,10 @@ long parse_and_execute_message(Msg *msg_to_handle, char *folder_path) {
         // nesta função não se usa "parse_program()"
         execute_message(msg_to_handle->pid, exec_args, folder_path);
 
-    gettimeofday(&time_after, NULL);
+    if (gettimeofday(&time_after, NULL) < 0) {
+        perror("[ERROR] gettimeofday:");
+        exit(EXIT_FAILURE);
+    }
     long time_spent = calculate_time_diff(time_before, time_after);
 
     msg_to_handle->type = COMPLETED;
