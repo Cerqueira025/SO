@@ -10,8 +10,8 @@
 #include <unistd.h>
 
 #define MAX_MESSAGE_NUMBER 100
-#define MAX_PROGRAM_SIZE 300  
-#define MAX_STRING_SIZE 350 // 300 + 50 para manobra
+#define MAX_PROGRAM_SIZE 300
+#define MAX_STRING_SIZE 350  // 300 + 50 para manobra
 #define MAX_PIPE_NUMBER 20
 
 typedef enum message_type {
@@ -54,13 +54,9 @@ typedef struct msg_list {
 
 //long calculate_time_diff(struct timeval time_before, struct timeval time_after);
 
-void create_message(
-    Msg *msg, int pid, int time, int is_pipe, char *program, MESSAGE_TYPE type
-);
+void create_message(Msg *msg, int pid, int time, int is_pipe, char *program, MESSAGE_TYPE type);
 
-void create_message_to_print(
-    Msg_to_print *msg, int pid, int time_spent, char *program, MESSAGE_TYPE type
-);
+void create_message_to_print(Msg_to_print *msg, int pid, int time_spent, char *program, MESSAGE_TYPE type);
 
 //void free_message(Msg msg);
 
@@ -68,9 +64,7 @@ long parse_and_execute_message(Msg *msg_to_handle, char *folder_path);
 
 void create_messages_list(Msg_list *messages_list, int parallel_tasks);
 
-void insert_scheduled_messages_list(
-    Msg_list *messages_list, Msg message_to_isert
-);
+void insert_scheduled_messages_list(Msg_list *messages_list, Msg message_to_isert);
 
 void delete_from_executing_messages_list(Msg_list *messages_list, int pid);
 

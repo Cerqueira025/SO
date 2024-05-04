@@ -1,14 +1,15 @@
 ---
 BasedOnStyle: Google
 IndentWidth: 4
+ColumnLimit: 9999
 AlignAfterOpenBracket: BlockIndent
 AlignArrayOfStructures: Right
 AlignEscapedNewlines: Left
-AllowAllArgumentsOnNextLine: true
+AllowAllArgumentsOnNextLine: false
 AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortEnumsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: None
+AllowShortFunctionsOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: WithoutElse
 BreakBeforeTernaryOperators: true
 BreakStringLiterals: false
