@@ -13,7 +13,7 @@ run_tests() {
         sleep_time=$(random_sleep)
         ms_time=$((sleep_time * 1000))
 
-        ./client execute $ms_time -u "sleep $sleep_time"
+        bin/client execute $ms_time -u "sleep $sleep_time"
     done
 
     echo "All requests sent completed."

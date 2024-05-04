@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 #define MAX_MESSAGE_NUMBER 100
-#define MAX_PROGRAM_SIZE 350 // 300 + 50 para manobra
+#define MAX_PROGRAM_SIZE 350  // 300 + 50 para manobra
 #define MAX_STRING_SIZE 200
 #define MAX_PIPE_NUMBER 20
 

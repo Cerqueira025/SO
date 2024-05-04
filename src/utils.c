@@ -3,7 +3,7 @@
 void create_folder(char *folder_path) {
     if (access(folder_path, F_OK) == -1) {
         if (mkdir(folder_path, 0777) == -1) {
-            perror("[ERROR] mkdir:");
+            perror("[ERROR 23] mkdir:");
             exit(EXIT_FAILURE);
         }
     }
@@ -11,7 +11,7 @@ void create_folder(char *folder_path) {
 
 void make_fifo(char *fifo_name) {
     if (mkfifo(fifo_name, 0666) == -1) {
-        perror("[ERROR] mkfifo:");
+        perror("[ERROR 24] mkfifo:");
         exit(EXIT_FAILURE);
     }
 }
@@ -24,7 +24,7 @@ int open_file(char *file_name, int flags, mode_t mode) {
         fd = open(file_name, flags, mode);
 
     if (fd == -1) {
-        perror("[ERROR] open:");
+        perror("[ERROR 25] open:");
         exit(EXIT_FAILURE);
     }
 
@@ -33,8 +33,8 @@ int open_file(char *file_name, int flags, mode_t mode) {
 
 int open_file_pid(int message_pid, int flags, mode_t mode) {
     char buffer[20];
-    if (sprintf(buffer, "fifo_%d", message_pid) < 0) {
-        perror("[ERROR] sprintf:");
+    if (sprintf(buffer, "tmp/fifo_%d", message_pid) < 0) {
+        perror("[ERROR 26] sprintf:");
         exit(EXIT_FAILURE);
     }
     int outgoing_fd = open_file(buffer, flags, mode);
@@ -44,14 +44,14 @@ int open_file_pid(int message_pid, int flags, mode_t mode) {
 
 void close_file(int fd) {
     if (close(fd) == -1) {
-        perror("[ERROR] close:");
+        perror("[ERROR 27] close:");
         exit(EXIT_FAILURE);
     }
 }
 
 void write_file(int outgoing_fd, const void *msg_to_send, size_t n_byes) {
     if (write(outgoing_fd, msg_to_send, n_byes) == -1) {
-        perror("[ERROR] write:");
+        perror("[ERROR 28] write:");
         exit(EXIT_FAILURE);
     }
 }
@@ -59,7 +59,7 @@ void write_file(int outgoing_fd, const void *msg_to_send, size_t n_byes) {
 int read_file(int outgoing_fd, void *msg_to_read, size_t n_byes) {
     int read_bytes = 0;
     if ((read_bytes = read(outgoing_fd, msg_to_read, n_byes)) == -1) {
-        perror("[ERROR] read:");
+        perror("[ERROR 29] read:");
         exit(EXIT_FAILURE);
     }
     return read_bytes;
@@ -67,7 +67,7 @@ int read_file(int outgoing_fd, void *msg_to_read, size_t n_byes) {
 
 void exec_command(char **exec_args) {
     if (execvp(exec_args[0], exec_args) == -1) {
-        perror("[ERROR] execvp:");
+        perror("[ERROR 30] execvp:");
         exit(EXIT_FAILURE);
     }
 }

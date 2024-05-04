@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include "../include/messages.h"
 #include "../include/utils.h"
@@ -15,8 +15,9 @@ void send_messages(Msg list[], int list_size, int outgoing_fd) {
 
     for (int i = 0; i < list_size; i++) {
         incoming_msg = list[i];
-        if (sprintf(buffer, "%d %s\n", incoming_msg.pid, incoming_msg.program) < 0) {
-            perror("[ERROR] sprintf:");
+        if (sprintf(buffer, "%d %s\n", incoming_msg.pid, incoming_msg.program) <
+            0) {
+            perror("[ERROR 15] sprintf:");
             exit(EXIT_FAILURE);
         }
 
@@ -30,7 +31,8 @@ void read_and_send_messages(char *shared_file_path, int outgoing_fd) {
     int incoming_fd = open_file(shared_file_path, O_RDONLY | O_CREAT, 0777);
 
     Msg incoming_and_outgoing_msg;
-    while (read_file(incoming_fd, &incoming_and_outgoing_msg, sizeof(Msg)) > 0) {
+    while (read_file(incoming_fd, &incoming_and_outgoing_msg, sizeof(Msg)) > 0
+    ) {
         write_file(outgoing_fd, &incoming_and_outgoing_msg, sizeof(Msg));
     }
 
@@ -46,7 +48,7 @@ void send_status_to_client(
     create_message(&msg_to_send, -1, -1, -1, "Executing\n", STATUS);
 
     write_file(outgoing_fd, &msg_to_send, sizeof(Msg));
-    
+
     send_messages(
         messages.executing_messages, messages.executing_messages_size,
         outgoing_fd
@@ -54,7 +56,7 @@ void send_status_to_client(
 
     create_message(&msg_to_send, -1, -1, -1, "\nScheduled\n", STATUS);
     write_file(outgoing_fd, &msg_to_send, sizeof(Msg));
-    
+
     send_messages(
         messages.scheduled_messages, messages.scheduled_messages_size,
         outgoing_fd
@@ -82,8 +84,11 @@ void write_time_spent(
 
     Msg formated_msg_to_write;
     char formated_text[MAX_PROGRAM_SIZE];
-    if (sprintf(formated_text, "%d %s %ld ms\n", msg_to_write.pid, msg_to_write.program, time_spent) < 0) {
-        perror("[ERROR] sprintf:");
+    if (sprintf(
+            formated_text, "%d %s %ld ms\n", msg_to_write.pid,
+            msg_to_write.program, time_spent
+        ) < 0) {
+        perror("[ERROR 16] sprintf:");
         exit(EXIT_FAILURE);
     }
 
@@ -94,12 +99,20 @@ void write_time_spent(
 
 int main(int argc, char **argv) {
     if (argc != 4 && argc != 5) {
-        write_file(STDOUT_FILENO, "usage: ./orchestrator output_folder parallel-tasks sched-policy <test-mode>\n", 77);
+        write_file(
+            STDOUT_FILENO,
+            "usage: ./orchestrator output_folder parallel-tasks sched-policy <test-mode>\n",
+            77
+        );
         exit(EXIT_FAILURE);
     }
 
-    char *folder_path = argv[1];
-    int parallel_tasks = atoi(argv[2]); // REVER
+    char folder_path[50];
+    if (sprintf(folder_path, "tmp/%s", argv[1]) < 0) {
+        perror("[ERROR 17] sprintf:");
+        exit(EXIT_FAILURE);
+    }
+    int parallel_tasks = atoi(argv[2]);  // REVER
     SCHED_POLICY sched_policy;
     if (strcmp(argv[3], "FCFS") == 0)
         sched_policy = FCFS;
@@ -115,14 +128,11 @@ int main(int argc, char **argv) {
         if (strcmp(argv[4], "test-mode") == 0) {
             is_testing = 20;
             write_file(STDOUT_FILENO, "Test mode enabled\n", 19);
-        } 
-        else {
+        } else {
             perror("Incorrect test-mode. Usage: test-mode");
             exit(EXIT_FAILURE);
         }
     }
-
-
 
     // Access determina as permissões de um ficheiro. Quando é usada a flag F_OK
     // é feito apenas um teste de existência. 0 se suceder, -1 se não.
@@ -141,15 +151,15 @@ int main(int argc, char **argv) {
     struct timeval time_before, time_after;
     if (is_testing > 0) {
         if (gettimeofday(&time_before, NULL) < 0) {
-        perror("[ERROR] gettimeofday:");
-        exit(EXIT_FAILURE);
+            perror("[ERROR 18] gettimeofday:");
+            exit(EXIT_FAILURE);
         }
     }
 
     // criar e abrir o ficheiro partilhado que terá os IDs e tempos de execução
     char shared_file_path[50];
-    if (sprintf(shared_file_path, "%s/tasks_info.txt", folder_path) < 0) {
-        perror("[ERROR] sprintf:");
+    if (sprintf(shared_file_path, "%s/tasks_info.bin", folder_path) < 0) {
+        perror("[ERROR 19] sprintf:");
         exit(EXIT_FAILURE);
     }
 
@@ -158,14 +168,19 @@ int main(int argc, char **argv) {
     Msg_list messages_list;
     create_messages_list(&messages_list, parallel_tasks);
 
-    while (read_file(incoming_fd, &message_received, sizeof(Msg)) && (message_received.type != STOP) && is_testing != 0) {
-        if (message_received.type == STATUS) 
-            send_status_to_client(messages_list, message_received.pid, shared_file_path);
+    while (read_file(incoming_fd, &message_received, sizeof(Msg)) &&
+           (message_received.type != STOP) && is_testing != 0) {
+        if (message_received.type == STATUS)
+            send_status_to_client(
+                messages_list, message_received.pid, shared_file_path
+            );
         else {
             // pai recolhe o processo filho
             if (message_received.type == COMPLETED) {
                 waitpid(message_received.child_pid, NULL, WUNTRACED);
-                delete_from_executing_messages_list(&messages_list, message_received.pid);
+                delete_from_executing_messages_list(
+                    &messages_list, message_received.pid
+                );
                 if (is_testing > 0) is_testing--;
             } else {
                 // enviar o numero do tarefa através do fifo criado pelo cliente
@@ -176,7 +191,11 @@ int main(int argc, char **argv) {
                 );
             }
 
-            if (sched_policy == SJF) sort_by_SJF(messages_list.scheduled_messages, messages_list.scheduled_messages_size);
+            if (sched_policy == SJF)
+                sort_by_SJF(
+                    messages_list.scheduled_messages,
+                    messages_list.scheduled_messages_size
+                );
 
             Msg msg_to_execute = get_next_executing_message(&messages_list);
 
@@ -204,14 +223,17 @@ int main(int argc, char **argv) {
 
     if (is_testing == 0) {
         if (gettimeofday(&time_after, NULL) < 0) {
-            perror("[ERROR] gettimeofday:");
+            perror("[ERROR 20] gettimeofday:");
             exit(EXIT_FAILURE);
         }
 
         long time_spent = calculate_time_diff(time_before, time_after);
         char time_spent_buffer[50];
-        if (sprintf(time_spent_buffer, "Took %ld ms to execute 20 tasks\n", time_spent) < 0) {
-            perror("[ERROR] sprintf:");
+        if (sprintf(
+                time_spent_buffer, "Took %ld ms to execute 20 tasks\n",
+                time_spent
+            ) < 0) {
+            perror("[ERROR 21] sprintf:");
             exit(EXIT_FAILURE);
         }
         write_file(STDOUT_FILENO, time_spent_buffer, strlen(time_spent_buffer));
@@ -223,7 +245,7 @@ int main(int argc, char **argv) {
 
     // apagar o pipe com nome
     if (unlink(MAIN_FIFO_NAME) == -1) {
-        perror("[ERROR] unlink:");
+        perror("[ERROR 22] unlink:");
         exit(EXIT_FAILURE);
     }
 

@@ -1,6 +1,6 @@
 #include "../include/messages.h"
-#include "../include/utils.h"
 
+#include "../include/utils.h"
 
 /*
  * Debater uso destas funções. Remover comentário se necessário.
@@ -21,7 +21,7 @@ void create_message(
     Msg *msg, int pid, int time, int is_pipe, char *program, MESSAGE_TYPE type
 ) {
     if (msg == NULL) {
-        perror("[ERROR] invalid message:");
+        perror("[ERROR 6] invalid message:");
         exit(EXIT_FAILURE);
     }
     msg->pid = pid;
@@ -30,7 +30,6 @@ void create_message(
     if (program != NULL) strcpy(msg->program, program);
     msg->type = type;
 }
-
 
 char *parse_program(
     char *program, char *exec_args[20], char *formatter, int *number_args
@@ -54,8 +53,8 @@ void execute_message(int pid, char *exec_args[20], char *folder_path) {
     int status = 0, temp_fd = -1;
 
     char buf[30];
-    if (sprintf(buf, "%s/task_%d.bin", folder_path, pid) < 0) {
-        perror("[ERROR] sprintf:");
+    if (sprintf(buf, "%s/task_%d.txt", folder_path, pid) < 0) {
+        perror("[ERROR 7] sprintf:");
         exit(EXIT_FAILURE);
     }
     temp_fd = open_file(buf, O_CREAT | O_WRONLY, 0640);
@@ -72,7 +71,7 @@ void execute_message(int pid, char *exec_args[20], char *folder_path) {
     wait(&status);
 
     if (WIFEXITED(status) && WEXITSTATUS(status) > 0) {
-        perror("[ERROR] fork execution failure:");
+        perror("[ERROR 8] fork execution failure:");
         exit(EXIT_FAILURE);
     }
 }
@@ -84,16 +83,16 @@ void execute_pipe_message(
     int pipes[MAX_PIPE_NUMBER][2];
     char *tofree[MAX_PIPE_NUMBER];
 
-    char buf[30];
-    if (sprintf(buf, "%s/task_%d.bin", folder_path, message_pid)) {
-        perror("[ERROR] sprintf:");
+    char buf[40];
+    if (sprintf(buf, "%s/task_%d.txt", folder_path, message_pid) < 0) {
+        perror("[ERROR 9] sprintf:");
         exit(EXIT_FAILURE);
     }
     int temp_fd = open_file(buf, O_CREAT | O_WRONLY, 0640);
 
     for (int i = 0; i < num_pipes; i++) {
         if (pipe(pipes[i]) < 0) {
-            perror("[ERROR] pipe error:");
+            perror("[ERROR 10] pipe error:");
             exit(EXIT_FAILURE);
         }
     }
@@ -116,8 +115,8 @@ void execute_pipe_message(
                 dup2(pipes[i][1], 1);
                 close_file(pipes[i][1]);
             } else {
-                dup2(temp_fd, 1); // std_out
-                dup2(temp_fd, 2); // std_err
+                dup2(temp_fd, 1);  // std_out
+                dup2(temp_fd, 2);  // std_err
                 close_file(temp_fd);
             }
 
@@ -135,7 +134,7 @@ void execute_pipe_message(
         close_file(pipes[i][0]);
         close_file(pipes[i][1]);
     }
-    
+
     tofree[number_args] = NULL;
     for (int j = 0; tofree[j] != NULL; j++) free(tofree[j]);
 
@@ -143,7 +142,7 @@ void execute_pipe_message(
         int status;
         wait(&status);
         if (WIFEXITED(status) && WEXITSTATUS(status) > 0)
-            perror("[ERROR] fork execution failure:");
+            perror("[ERROR 11] fork execution failure:");
     }
 }
 
@@ -159,12 +158,12 @@ long parse_and_execute_message(Msg *msg_to_handle, char *folder_path) {
 
     struct timeval time_before, time_after;
     if (gettimeofday(&time_before, NULL) < 0) {
-        perror("[ERROR] gettimeofday:");
+        perror("[ERROR 12] gettimeofday:");
         exit(EXIT_FAILURE);
     }
 
     if (msg_to_handle->is_pipe)
-        // nesta função, usa-se novamente "parse_program()", mas a string que esta devolve 
+        // nesta função, usa-se novamente "parse_program()", mas a string que esta devolve
         // leva um "free" dentro desta função.
         execute_pipe_message(
             msg_to_handle->pid, exec_args, folder_path, number_args
@@ -174,7 +173,7 @@ long parse_and_execute_message(Msg *msg_to_handle, char *folder_path) {
         execute_message(msg_to_handle->pid, exec_args, folder_path);
 
     if (gettimeofday(&time_after, NULL) < 0) {
-        perror("[ERROR] gettimeofday:");
+        perror("[ERROR 13] gettimeofday:");
         exit(EXIT_FAILURE);
     }
     long time_spent = calculate_time_diff(time_before, time_after);
@@ -196,7 +195,7 @@ void insert_scheduled_messages_list(
     Msg_list *messages_list, Msg message_to_insert
 ) {
     if (message_to_insert.type != SCHEDULED) {
-        perror("[ERROR] message of incorrect type:");
+        perror("[ERROR 14] message of incorrect type:");
         exit(EXIT_FAILURE);
     }
     messages_list
@@ -228,8 +227,8 @@ void delete_from_executing_messages_list(Msg_list *messages_list, int pid) {
         if (messages_list->executing_messages[i].pid == pid) {
             flag = 0;
             for (int j = i; j < messages_list->executing_messages_size - 1; j++)
-                messages_list->scheduled_messages[j] =
-                    messages_list->scheduled_messages[j + 1];
+                messages_list->executing_messages[j] =
+                    messages_list->executing_messages[j + 1];
         }
 
     messages_list->executing_messages_size--;
@@ -242,7 +241,6 @@ Msg get_next_executing_message(Msg_list *messages_list) {
         messages_list->scheduled_messages_size > 0) {
         to_execute = pop_scheduled_messages_list(messages_list);
         insert_executing_messages_list(messages_list, &to_execute);
-
     } else
         to_execute.type = ERR;
 

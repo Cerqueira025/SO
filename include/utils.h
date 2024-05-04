@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <sys/time.h>
+#include <unistd.h>
 
-#define MAIN_FIFO_NAME "fifo_main"
+#define MAIN_FIFO_NAME "tmp/fifo_main"
 
 typedef enum sched_policy {
     FCFS,
