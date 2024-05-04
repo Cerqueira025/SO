@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
     // cria, caso não exista, a pasta definida pelo utilizador
     create_folder(folder_path);
 
-    // cria fifo para receber as mensagens dos clientes
+    // cria fifo para receber mensagens
     make_fifo(MAIN_FIFO_NAME);
 
     // imprime no ecrã informação de debugging
