@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
     int is_testing = -1;
     if (argv[4] != NULL) {
         if (strcmp(argv[4], "test-mode") == 0) {
-            is_testing = 20;
+            is_testing = NUM_TESTS - 1;
             write_file(STDOUT_FILENO, "Test mode enabled\n", 19);
         } else {
             perror("Incorrect test-mode. Usage: test-mode");
