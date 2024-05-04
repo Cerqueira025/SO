@@ -2,31 +2,30 @@
 
 #include "../include/utils.h"
 
-/*
- * Debater uso destas funções. Remover comentário se necessário.
-void set_message_pid(Msg msg, int pid) {
-    msg.pid = pid;
-}
-
-void set_message_program(Msg msg,char* program) {
-    msg.program = strdup(program);
-}
-
-void set_message_time(Msg msg, int time) {
-    msg.time = time;
-}
-*/
 
 void create_message(
     Msg *msg, int pid, int time, int is_pipe, char *program, MESSAGE_TYPE type
 ) {
     if (msg == NULL) {
-        perror("[ERROR 6] invalid message:");
+        perror("[ERROR 8] invalid message:");
         exit(EXIT_FAILURE);
     }
     msg->pid = pid;
     msg->time = time;
     msg->is_pipe = is_pipe;
+    if (program != NULL) strcpy(msg->program, program);
+    msg->type = type;
+}
+
+void create_message_to_print(
+    Msg_to_print *msg, int pid, int time_spent, char *program, MESSAGE_TYPE type
+) {
+    if (msg == NULL) {
+        perror("[ERROR 9] invalid message:");
+        exit(EXIT_FAILURE);
+    }
+    msg->pid = pid;
+    msg->time_spent = time_spent;
     if (program != NULL) strcpy(msg->program, program);
     msg->type = type;
 }
@@ -54,7 +53,7 @@ void execute_message(int pid, char *exec_args[20], char *folder_path) {
 
     char buf[30];
     if (sprintf(buf, "%s/task_%d.txt", folder_path, pid) < 0) {
-        perror("[ERROR 7] sprintf:");
+        perror("[ERROR 10] sprintf:");
         exit(EXIT_FAILURE);
     }
     temp_fd = open_file(buf, O_CREAT | O_WRONLY, 0640);
@@ -71,7 +70,7 @@ void execute_message(int pid, char *exec_args[20], char *folder_path) {
     wait(&status);
 
     if (WIFEXITED(status) && WEXITSTATUS(status) > 0) {
-        perror("[ERROR 8] fork execution failure:");
+        perror("[ERROR 11] fork execution failure:");
         exit(EXIT_FAILURE);
     }
 }
@@ -85,14 +84,14 @@ void execute_pipe_message(
 
     char buf[40];
     if (sprintf(buf, "%s/task_%d.txt", folder_path, message_pid) < 0) {
-        perror("[ERROR 9] sprintf:");
+        perror("[ERROR 12] sprintf:");
         exit(EXIT_FAILURE);
     }
     int temp_fd = open_file(buf, O_CREAT | O_WRONLY, 0640);
 
     for (int i = 0; i < num_pipes; i++) {
         if (pipe(pipes[i]) < 0) {
-            perror("[ERROR 10] pipe error:");
+            perror("[ERROR 13] pipe error:");
             exit(EXIT_FAILURE);
         }
     }
@@ -142,7 +141,7 @@ void execute_pipe_message(
         int status;
         wait(&status);
         if (WIFEXITED(status) && WEXITSTATUS(status) > 0)
-            perror("[ERROR 11] fork execution failure:");
+            perror("[ERROR 14] fork execution failure:");
     }
 }
 
@@ -158,7 +157,7 @@ long parse_and_execute_message(Msg *msg_to_handle, char *folder_path) {
 
     struct timeval time_before, time_after;
     if (gettimeofday(&time_before, NULL) < 0) {
-        perror("[ERROR 12] gettimeofday:");
+        perror("[ERROR 15] gettimeofday:");
         exit(EXIT_FAILURE);
     }
 
@@ -173,7 +172,7 @@ long parse_and_execute_message(Msg *msg_to_handle, char *folder_path) {
         execute_message(msg_to_handle->pid, exec_args, folder_path);
 
     if (gettimeofday(&time_after, NULL) < 0) {
-        perror("[ERROR 13] gettimeofday:");
+        perror("[ERROR 16] gettimeofday:");
         exit(EXIT_FAILURE);
     }
     long time_spent = calculate_time_diff(time_before, time_after);
@@ -195,7 +194,7 @@ void insert_scheduled_messages_list(
     Msg_list *messages_list, Msg message_to_insert
 ) {
     if (message_to_insert.type != SCHEDULED) {
-        perror("[ERROR 14] message of incorrect type:");
+        perror("[ERROR 17] message of incorrect type:");
         exit(EXIT_FAILURE);
     }
     messages_list

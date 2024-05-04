@@ -32,17 +32,33 @@ void receive_and_print_status(char *server_to_client_fifo) {
     // abrir fifo para receber o status
     int incoming_fd = open_file(server_to_client_fifo, O_RDONLY, 0);
 
-    Msg incoming_msg;
-    char status_buffer[MAX_PROGRAM_SIZE];
-    while (read_file(incoming_fd, &incoming_msg, sizeof(Msg)) > 0) {
-        if (incoming_msg.type != STATUS) {
+    Msg_to_print incoming_msg;
+    char status_buffer[MAX_STRING_SIZE];
+    while (read_file(incoming_fd, &incoming_msg, sizeof(Msg_to_print)) > 0) {
+        if (incoming_msg.type != TEXT && incoming_msg.type != PROGRAM_ID && incoming_msg.type != PROGRAM_ID_TIMESPENT) {
             perror("[ERROR 2] message of incorrect type:");
             exit(EXIT_FAILURE);
         }
-        if (sprintf(status_buffer, "%s", incoming_msg.program) < 0) {
-            perror("[ERROR 3] sprintf:");
-            exit(EXIT_FAILURE);
+
+        if (incoming_msg.type == TEXT) {
+           if (sprintf(status_buffer, "%s", incoming_msg.program) < 0) {
+                perror("[ERROR 3] sprintf:");
+                exit(EXIT_FAILURE);
+            }
         }
+        else if (incoming_msg.type == PROGRAM_ID) {
+            if (sprintf(status_buffer, "%d %s\n", incoming_msg.pid, incoming_msg.program) < 0) {
+                perror("[ERROR 4] sprintf:");
+                exit(EXIT_FAILURE);
+            }
+        }
+        else {
+            if (sprintf(status_buffer, "%d %s %ld ms\n", incoming_msg.pid, incoming_msg.program, incoming_msg.time_spent) < 0) {
+                perror("[ERROR 5] sprintf:");
+                exit(EXIT_FAILURE);
+            }
+        }
+
         write_file(STDOUT_FILENO, status_buffer, strlen(status_buffer));
     }
 
@@ -64,7 +80,7 @@ int main(int argc, char **argv) {
     // cria fifo para receber a resposta do servidor com o pid
     char server_to_client_fifo[25];
     if (sprintf(server_to_client_fifo, "tmp/fifo_%d", pid) < 0) {
-        perror("[ERROR 4] sprintf:");
+        perror("[ERROR 6] sprintf:");
         exit(EXIT_FAILURE);
     }
     make_fifo(server_to_client_fifo);
@@ -76,20 +92,25 @@ int main(int argc, char **argv) {
     if (strcmp(argv[1], "execute") == 0) {
         int time = atoi(argv[2]);  // REVER
 
-        int ispipe = -1;
+        int is_pipe = -1;
         if (strcmp(argv[3], "-u") == 0)
-            ispipe = 0;
+            is_pipe = 0;
         else if (strcmp(argv[3], "-p") == 0)
-            ispipe = 1;
+            is_pipe = 1;
         else {
             perror("Incorrect flag. Usage: -u / -p");
             exit(EXIT_FAILURE);
         }
 
         char program[300];
-        strcpy(program, argv[4]);  // REVER
+        strcpy(program, argv[4]);
 
-        create_message(&msg_to_send, pid, time, ispipe, program, SCHEDULED);
+        if (!check_correct_format(program, is_pipe)) {
+            perror("[ERROR 32] incorrect flag for program:");
+            exit(EXIT_FAILURE);
+        }
+
+        create_message(&msg_to_send, pid, time, is_pipe, program, SCHEDULED);
 
         send_message_to_server(msg_to_send);
 
@@ -123,9 +144,9 @@ int main(int argc, char **argv) {
 
     // apagar fifo
     if (unlink(server_to_client_fifo) == -1) {
-        perror("[ERROR 5] unlink:");
+        perror("[ERROR 7] unlink:");
         exit(EXIT_FAILURE);
     }
 
-    return 0;
+    exit(EXIT_SUCCESS);
 }

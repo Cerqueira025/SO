@@ -28,3 +28,5 @@ void write_file(int outgoing_fd, const void *msg_to_send, size_t n_byes);
 int read_file(int outgoing_fd, void *msg_to_send, size_t n_byes);
 
 long calculate_time_diff(struct timeval time_before, struct timeval time_after);
+
+int check_correct_format(char *program, int is_pipe);

@@ -10,19 +10,14 @@
 #include "../include/utils.h"
 
 void send_messages(Msg list[], int list_size, int outgoing_fd) {
-    Msg outgoing_msg, incoming_msg;
-    char buffer[MAX_PROGRAM_SIZE];
+    Msg incoming_msg;
+    Msg_to_print outgoing_msg;
 
     for (int i = 0; i < list_size; i++) {
         incoming_msg = list[i];
-        if (sprintf(buffer, "%d %s\n", incoming_msg.pid, incoming_msg.program) <
-            0) {
-            perror("[ERROR 15] sprintf:");
-            exit(EXIT_FAILURE);
-        }
 
-        create_message(&outgoing_msg, -1, -1, -1, buffer, STATUS);
-        write_file(outgoing_fd, &outgoing_msg, sizeof(Msg));
+        create_message_to_print(&outgoing_msg, incoming_msg.pid, -1, incoming_msg.program, PROGRAM_ID);
+        write_file(outgoing_fd, &outgoing_msg, sizeof(Msg_to_print));
     }
 }
 
@@ -30,10 +25,10 @@ void read_and_send_messages(char *shared_file_path, int outgoing_fd) {
     // usa-se a flag O_CREAT no caso deste ficheiro ainda não ter sido aberto
     int incoming_fd = open_file(shared_file_path, O_RDONLY | O_CREAT, 0777);
 
-    Msg incoming_and_outgoing_msg;
-    while (read_file(incoming_fd, &incoming_and_outgoing_msg, sizeof(Msg)) > 0
+    Msg_to_print incoming_and_outgoing_msg;
+    while (read_file(incoming_fd, &incoming_and_outgoing_msg, sizeof(Msg_to_print)) > 0
     ) {
-        write_file(outgoing_fd, &incoming_and_outgoing_msg, sizeof(Msg));
+        write_file(outgoing_fd, &incoming_and_outgoing_msg, sizeof(Msg_to_print));
     }
 
     close_file(incoming_fd);
@@ -44,8 +39,8 @@ void send_status_to_client(
 ) {
     int outgoing_fd = open_file_pid(message_pid, O_WRONLY, 0);
 
-    Msg msg_to_send;
-    create_message(&msg_to_send, -1, -1, -1, "Executing\n", STATUS);
+    Msg_to_print msg_to_send;
+    create_message_to_print(&msg_to_send, -1, -1, "Executing\n", TEXT);
 
     write_file(outgoing_fd, &msg_to_send, sizeof(Msg));
 
@@ -54,7 +49,7 @@ void send_status_to_client(
         outgoing_fd
     );
 
-    create_message(&msg_to_send, -1, -1, -1, "\nScheduled\n", STATUS);
+    create_message_to_print(&msg_to_send, -1, -1, "\nScheduled\n", TEXT);
     write_file(outgoing_fd, &msg_to_send, sizeof(Msg));
 
     send_messages(
@@ -62,7 +57,7 @@ void send_status_to_client(
         outgoing_fd
     );
 
-    create_message(&msg_to_send, -1, -1, -1, "\nCompleted\n", STATUS);
+    create_message_to_print(&msg_to_send, -1, -1, "\nCompleted\n", TEXT);
     write_file(outgoing_fd, &msg_to_send, sizeof(Msg));
 
     read_and_send_messages(shared_file_path, outgoing_fd);
@@ -76,24 +71,13 @@ void send_task_number_to_client(int message_pid) {
     close_file(outgoing_fd);
 }
 
-void write_time_spent(
-    char *shared_file_path, Msg msg_to_write, long time_spent
-) {
-    int shared_fd =
-        open_file(shared_file_path, O_WRONLY | O_APPEND | O_CREAT, 0777);
+void write_time_spent(char *shared_file_path, Msg msg_to_write, long time_spent) {
+    int shared_fd = open_file(shared_file_path, O_WRONLY | O_APPEND | O_CREAT, 0777);
 
-    Msg formated_msg_to_write;
-    char formated_text[MAX_PROGRAM_SIZE];
-    if (sprintf(
-            formated_text, "%d %s %ld ms\n", msg_to_write.pid,
-            msg_to_write.program, time_spent
-        ) < 0) {
-        perror("[ERROR 16] sprintf:");
-        exit(EXIT_FAILURE);
-    }
+    Msg_to_print outgoing_msg;
+    create_message_to_print(&outgoing_msg, msg_to_write.pid, time_spent, msg_to_write.program, PROGRAM_ID_TIMESPENT);
 
-    create_message(&formated_msg_to_write, -1, -1, -1, formated_text, STATUS);
-    write_file(shared_fd, &formated_msg_to_write, sizeof(Msg));
+    write_file(shared_fd, &outgoing_msg, sizeof(Msg));
     close_file(shared_fd);
 }
 
@@ -109,7 +93,7 @@ int main(int argc, char **argv) {
 
     char folder_path[50];
     if (sprintf(folder_path, "tmp/%s", argv[1]) < 0) {
-        perror("[ERROR 17] sprintf:");
+        perror("[ERROR 18] sprintf:");
         exit(EXIT_FAILURE);
     }
     int parallel_tasks = atoi(argv[2]);  // REVER
@@ -151,7 +135,7 @@ int main(int argc, char **argv) {
     struct timeval time_before, time_after;
     if (is_testing > 0) {
         if (gettimeofday(&time_before, NULL) < 0) {
-            perror("[ERROR 18] gettimeofday:");
+            perror("[ERROR 19] gettimeofday:");
             exit(EXIT_FAILURE);
         }
     }
@@ -159,7 +143,7 @@ int main(int argc, char **argv) {
     // criar e abrir o ficheiro partilhado que terá os IDs e tempos de execução
     char shared_file_path[50];
     if (sprintf(shared_file_path, "%s/tasks_info.bin", folder_path) < 0) {
-        perror("[ERROR 19] sprintf:");
+        perror("[ERROR 20] sprintf:");
         exit(EXIT_FAILURE);
     }
 
@@ -212,7 +196,7 @@ int main(int argc, char **argv) {
 
                     // a mensagem já tem tipo COMPLETED e o pid refere-se a ESTE processo
                     msg_to_execute.child_pid = getpid();
-                    write_file(aux_fd, &msg_to_execute, sizeof(msg_to_execute));
+                    write_file(aux_fd, &msg_to_execute, sizeof(Msg));
                     exit(0);
                 }
             }
@@ -223,7 +207,7 @@ int main(int argc, char **argv) {
 
     if (is_testing == 0) {
         if (gettimeofday(&time_after, NULL) < 0) {
-            perror("[ERROR 20] gettimeofday:");
+            perror("[ERROR 21] gettimeofday:");
             exit(EXIT_FAILURE);
         }
 
@@ -233,7 +217,7 @@ int main(int argc, char **argv) {
                 time_spent_buffer, "Took %ld ms to execute 20 tasks\n",
                 time_spent
             ) < 0) {
-            perror("[ERROR 21] sprintf:");
+            perror("[ERROR 22] sprintf:");
             exit(EXIT_FAILURE);
         }
         write_file(STDOUT_FILENO, time_spent_buffer, strlen(time_spent_buffer));
@@ -245,9 +229,9 @@ int main(int argc, char **argv) {
 
     // apagar o pipe com nome
     if (unlink(MAIN_FIFO_NAME) == -1) {
-        perror("[ERROR 22] unlink:");
+        perror("[ERROR 23] unlink:");
         exit(EXIT_FAILURE);
     }
 
-    return 0;
+    exit(EXIT_SUCCESS);
 }

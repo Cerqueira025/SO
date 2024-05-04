@@ -10,8 +10,8 @@
 #include <unistd.h>
 
 #define MAX_MESSAGE_NUMBER 100
-#define MAX_PROGRAM_SIZE 350  // 300 + 50 para manobra
-#define MAX_STRING_SIZE 200
+#define MAX_PROGRAM_SIZE 300  
+#define MAX_STRING_SIZE 350 // 300 + 50 para manobra
 #define MAX_PIPE_NUMBER 20
 
 typedef enum message_type {
@@ -21,7 +21,17 @@ typedef enum message_type {
     SCHEDULED,
     EXECUTING,
     COMPLETED,
+    TEXT,
+    PROGRAM_ID,
+    PROGRAM_ID_TIMESPENT
 } MESSAGE_TYPE;
+
+typedef struct msg_to_print {
+    int pid;
+    long time_spent;
+    char program[MAX_PROGRAM_SIZE];
+    MESSAGE_TYPE type;
+} Msg_to_print;
 
 typedef struct msg {
     int pid;
@@ -46,6 +56,10 @@ typedef struct msg_list {
 
 void create_message(
     Msg *msg, int pid, int time, int is_pipe, char *program, MESSAGE_TYPE type
+);
+
+void create_message_to_print(
+    Msg_to_print *msg, int pid, int time_spent, char *program, MESSAGE_TYPE type
 );
 
 //void free_message(Msg msg);
