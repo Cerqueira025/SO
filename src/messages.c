@@ -1,5 +1,4 @@
 #include "../include/messages.h"
-
 #include "../include/utils.h"
 
 /**
@@ -334,4 +333,171 @@ void sort_by_SJF(Msg *scheduled_messages, int size) {
             }
         }
     }
+}
+
+/*---------FUNÇÕES AUXILIARES ORCHESTRATOR---------*/
+
+/**
+ * dado um array de mensagens to tipo Msg, cria mensagens to tipo 
+ * Msg_to_print, para facilitar no envio de informação de mensagens
+ * para o cliente
+*/
+void send_messages(Msg list[], int list_size, int outgoing_fd) {
+    Msg incoming_msg;
+    Msg_to_print outgoing_msg;
+
+    for (int i = 0; i < list_size; i++) {
+        incoming_msg = list[i];
+
+        create_message_to_print(&outgoing_msg, incoming_msg.pid, -1, incoming_msg.program, PROGRAM_ID);
+        write_file(outgoing_fd, &outgoing_msg, sizeof(Msg_to_print));
+    }
+}
+
+/**
+ * lê do ficheiro partilhado a informação guardada das tarefas concluídas,
+ * criando mensagens to tipo Msg_to_print para facilitar no envio de informação
+ * para o cliente
+*/
+void read_and_send_messages(char *shared_file_path, int outgoing_fd) {
+    // usa-se a flag O_CREAT no caso deste ficheiro ainda não ter sido aberto
+    int incoming_fd = open_file(shared_file_path, O_RDONLY | O_CREAT, 0777);
+
+    Msg_to_print incoming_and_outgoing_msg;
+    while (read_file(incoming_fd, &incoming_and_outgoing_msg, sizeof(Msg_to_print)) > 0) {
+        write_file(outgoing_fd, &incoming_and_outgoing_msg, sizeof(Msg_to_print));
+    }
+
+    close_file(incoming_fd);
+}
+
+/**
+ * envia um estado geral das tarefas agendadas, a executar e concluídas
+ * para o cliente. faz uso das últimas 2 funções e, adicionalmente, envia mensagens
+ * do tipo Msg_to_print que apenas contêm strings "delimitadoras" do estado das mensagens. 
+*/
+void send_status_to_client(Msg_list messages, int message_pid, char *shared_file_path) {
+    int outgoing_fd = open_file_pid(message_pid, O_WRONLY, 0);
+
+    Msg_to_print msg_to_send;
+    create_message_to_print(&msg_to_send, -1, -1, "Executing\n", TEXT);
+
+    write_file(outgoing_fd, &msg_to_send, sizeof(Msg));
+
+    send_messages(messages.executing_messages, messages.executing_messages_size, outgoing_fd);
+
+    create_message_to_print(&msg_to_send, -1, -1, "\nScheduled\n", TEXT);
+    write_file(outgoing_fd, &msg_to_send, sizeof(Msg));
+
+    send_messages(messages.scheduled_messages, messages.scheduled_messages_size, outgoing_fd);
+
+    create_message_to_print(&msg_to_send, -1, -1, "\nCompleted\n", TEXT);
+    write_file(outgoing_fd, &msg_to_send, sizeof(Msg));
+
+    read_and_send_messages(shared_file_path, outgoing_fd);
+
+    close_file(outgoing_fd);
+}
+
+/**
+ * envia, através do fifo temporário e único criado pelo cliente, o id
+ * da tarefa
+*/
+void send_task_number_to_client(int message_pid) {
+    int outgoing_fd = open_file_pid(message_pid, O_WRONLY, 0);
+    write_file(outgoing_fd, &message_pid, sizeof(message_pid));
+    close_file(outgoing_fd);
+}
+
+/**
+ * escreve, no mesmo ficheiro, informação relativa ao id, programa e tempo
+ * de execução das tarefas concluídas
+*/
+void write_time_spent(char *shared_file_path, Msg msg_to_write, long time_spent) {
+    int shared_fd = open_file(shared_file_path, O_WRONLY | O_APPEND | O_CREAT, 0777);
+
+    Msg_to_print outgoing_msg;
+    create_message_to_print(&outgoing_msg, msg_to_write.pid, time_spent, msg_to_write.program, PROGRAM_ID_TIMESPENT);
+
+    write_file(shared_fd, &outgoing_msg, sizeof(Msg));
+    close_file(shared_fd);
+}
+
+
+
+/*---------FUNÇÕES AUXILIARES CLIENT---------*/
+
+
+/**
+ * dada uma mensagem pronta a enviar, envia para o destino fixo
+ * definido por MAIN_FIFO_NAME.
+*/
+void send_message_to_server(Msg msg_to_send) {
+    int outgoing_fd = open_file(MAIN_FIFO_NAME, O_WRONLY, 0);
+    write_file(outgoing_fd, &msg_to_send, sizeof(Msg));
+    close_file(outgoing_fd);
+}
+
+/**
+ * dado o caminho para o fifo temporário e único já criado,
+ * é recebido um inteiro correspondente ao id da tarefa
+ * atribuido pelo servidor
+*/
+void receive_and_print_tasknum(char *server_to_client_fifo) {
+    // abrir fifo para receber o id da tarefa
+    int tasknum;
+    int incoming_fd = open_file(server_to_client_fifo, O_RDONLY, 0);
+    read_file(incoming_fd, &tasknum, sizeof(tasknum));
+    close_file(incoming_fd);
+
+    char tasknum_buffer[50];
+    if (sprintf(tasknum_buffer, "TASK %d Received\n", tasknum) < 0) {
+        perror("[ERROR 1] sprintf:");
+        exit(EXIT_FAILURE);
+    }
+    write_file(STDOUT_FILENO, tasknum_buffer, strlen(tasknum_buffer));
+}
+
+/**
+ * dado o caminho para o fifo temporário e único já criado,
+ * é recebido um conjunto de mensagens prontas a serem imprimidas 
+*/
+void receive_and_print_status(char *server_to_client_fifo) {
+    // abrir fifo para receber o status
+    int incoming_fd = open_file(server_to_client_fifo, O_RDONLY, 0);
+
+    Msg_to_print incoming_msg;
+    char status_buffer[MAX_STRING_SIZE];
+    while (read_file(incoming_fd, &incoming_msg, sizeof(Msg_to_print)) > 0) {
+        if (incoming_msg.type != TEXT && incoming_msg.type != PROGRAM_ID && incoming_msg.type != PROGRAM_ID_TIMESPENT) {
+            perror("[ERROR 2] message of incorrect type:");
+            exit(EXIT_FAILURE);
+        }
+
+        // a mensagem apenas inclui texto
+        if (incoming_msg.type == TEXT) {
+            if (sprintf(status_buffer, "%s", incoming_msg.program) < 0) {
+                perror("[ERROR 3] sprintf:");
+                exit(EXIT_FAILURE);
+            }
+        }
+        // a mensagem inclui o id da tarefa e o programa da mesma
+        else if (incoming_msg.type == PROGRAM_ID) {
+            if (sprintf(status_buffer, "%d %s\n", incoming_msg.pid, incoming_msg.program) < 0) {
+                perror("[ERROR 4] sprintf:");
+                exit(EXIT_FAILURE);
+            }
+        }
+        // a mensagem inclui o id da tarefa, o programa da mesma e o tempo que demorou a executar
+        else {
+            if (sprintf(status_buffer, "%d %s %ld ms\n", incoming_msg.pid, incoming_msg.program, incoming_msg.time_spent) < 0) {
+                perror("[ERROR 5] sprintf:");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        write_file(STDOUT_FILENO, status_buffer, strlen(status_buffer));
+    }
+
+    close_file(incoming_fd);
 }

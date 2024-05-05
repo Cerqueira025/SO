@@ -1,11 +1,9 @@
 #!/bin/bash
 
-# Function to generate a random number between 1 and 20
 random_sleep() {
     echo $((RANDOM % 10 + 1))
 }
 
-# Function to run the tests
 run_tests() {
     local num_tests=20
 
@@ -19,6 +17,5 @@ run_tests() {
     echo "All requests sent completed."
 }
 
-# Run the tests
 run_tests
 

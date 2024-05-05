@@ -1,6 +1,11 @@
+#ifndef UTILS_H
+#define UTILS_H
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
@@ -30,3 +35,5 @@ int read_file(int outgoing_fd, void *msg_to_send, size_t n_byes);
 long calculate_time_diff(struct timeval time_before, struct timeval time_after);
 
 int check_correct_format(char *program, int is_pipe);
+
+#endif
