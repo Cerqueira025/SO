@@ -83,7 +83,7 @@ void receive_and_print_status(char *server_to_client_fifo) {
 
 int main(int argc, char **argv) {
     if (argc != 2 && argc != 5) {
-        write_file(STDOUT_FILENO, "Usage:\n    ./client execute time(ms) -u 'prog-a arg-1 (...) arg-n'\n    ./client execute time(ms) -p 'prog-a arg-1 (...) arg-n|prog-b arg-1 (...) arg-n|prog-c arg-1 (...) arg-n'\n    ./client status\n    ./client server-stop\n", 223);
+        write_file(STDOUT_FILENO, "Usage:\n    ./client execute time(ms) -u 'prog [args]'\n    ./client execute time(ms) -p 'prog-a [args] | prog-b [args] | prog-c [args]'\n    ./client status\n    ./client server-stop\n", 181);
         exit(EXIT_FAILURE);
     }
 

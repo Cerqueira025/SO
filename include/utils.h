@@ -11,7 +11,6 @@
 typedef enum sched_policy {
     FCFS,
     SJF
-    // PP
 } SCHED_POLICY;
 
 void create_folder(char *folder_path);

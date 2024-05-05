@@ -35,7 +35,7 @@ void create_message_to_print(Msg_to_print *msg, int pid, int time_spent, char *p
  * separa um programa em diferentes argumentos, tendo por base um formatter, 
  * e preenche o array exec_args
 */
-char *parse_program(char *program, char *exec_args[20], char *formatter, int *number_args) {
+char *parse_program(char *program, char *exec_args[MAX_EXEC_ARGS], char *formatter, int *number_args) {
     int i = 0;
     char *string, *cmd, *tofree;
 
@@ -56,7 +56,7 @@ char *parse_program(char *program, char *exec_args[20], char *formatter, int *nu
  * redirecionando o STDOUT e o STDERR para o ficheiro contruído através
  * dos restantes parâmetros
 */
-void execute_message(int pid, char *exec_args[20], char *folder_path) {
+void execute_message(int pid, char *exec_args[MAX_EXEC_ARGS], char *folder_path) {
     int status = 0, temp_fd = -1;
 
     char buf[30];
@@ -78,21 +78,19 @@ void execute_message(int pid, char *exec_args[20], char *folder_path) {
     close_file(temp_fd);
     wait(&status);
 
-    if (WIFEXITED(status) && WEXITSTATUS(status) > 0) {
+    if (WIFEXITED(status) && WEXITSTATUS(status) > 0)
         perror("[ERROR 11] fork execution failure:");
-        exit(EXIT_FAILURE);
-    }
 }
 
 /**
  * dada uma lista com vários programas e os seus argumentos, separa cada
  * programa através do parse_program e executa os mesmos, redirecionando o STDOUT
- * e o STDERR para o ficheiro contruído através dos restantes parâmetros
+ * e o STDERR para o ficheiro construído através dos restantes parâmetros
 */
-void execute_pipe_message(int message_pid, char *exec_args[20], char *folder_path, int number_args) {
-    int num_pipes = number_args - 1;
+void execute_pipe_message(int message_pid, char *exec_args[MAX_EXEC_ARGS], char *folder_path, int number_args) {
     int pipes[MAX_PIPE_NUMBER][2];
-    char *tofree[MAX_PIPE_NUMBER];
+    char *tofree[MAX_PIPE_NUMBER + 1];
+	int status[MAX_PIPE_NUMBER + 1];
 
     char buf[40];
     if (sprintf(buf, "%s/task_%d.txt", folder_path, message_pid) < 0) {
@@ -101,57 +99,114 @@ void execute_pipe_message(int message_pid, char *exec_args[20], char *folder_pat
     }
     int temp_fd = open_file(buf, O_CREAT | O_WRONLY, 0640);
 
-    for (int i = 0; i < num_pipes; i++) {
-        if (pipe(pipes[i]) < 0) {
-            perror("[ERROR 13] pipe error:");
-            exit(EXIT_FAILURE);
-        }
+	for (int c = 0; c < number_args; c++) {
+        
+        /*----PRIMEIRO PROCESSO----*/
+		if (c == 0) {
+			if (pipe(pipes[c]) != 0) {
+				perror("[ERROR 13] pipe:");
+				exit(EXIT_FAILURE);
+			}
+			switch(fork()) {
+				case -1:
+					perror("[ERROR 33] fork:");
+					exit(EXIT_FAILURE);
+
+				case 0:
+					close_file(pipes[c][0]);
+
+					dup2(pipes[c][1],1);
+					close_file(pipes[c][1]);
+
+
+					char *command_args[MAX_EXEC_ARGS];
+                    char *formatter = " ";
+                    int number_args_commands = 0;
+                    tofree[c] = parse_program(exec_args[c], command_args, formatter, &number_args_commands);
+
+					execvp(command_args[0], command_args);
+                    exit(EXIT_FAILURE);
+
+				default:
+					close_file(pipes[c][1]);
+			}
+		}
+
+        /*----ÚLTIMO PROCESSO----*/
+		else if (c == number_args - 1) {
+			// não se cria um pipe novo, uma vez que não haverá um próximo processo
+            switch(fork()) {
+				case -1:
+					perror("[ERROR 34] fork:");
+					exit(EXIT_FAILURE);
+
+				case 0:
+					dup2(pipes[c-1][0], 0);
+					close_file(pipes[c-1][0]);
+
+                    dup2(temp_fd, 1);
+                    close_file(temp_fd);
+
+
+					char *command_args[MAX_EXEC_ARGS];
+                    char *formatter = " ";
+                    int number_args_commands = 0;
+                    tofree[c] = parse_program(exec_args[c], command_args, formatter, &number_args_commands);
+
+					execvp(command_args[0], command_args);
+                    exit(EXIT_FAILURE);
+
+				default:
+					close_file(pipes[c-1][0]);
+                    close_file(temp_fd);
+			}
+		}
+
+        /*----PROCESSOS INTERMÉDIOS----*/
+		else {
+			if (pipe(pipes[c]) != 0) {
+				perror("[ERROR 35] pipe:");
+				exit(EXIT_FAILURE);
+			}
+			switch(fork()) {
+				case -1:
+					perror("[ERROR 36] fork:");
+					exit(EXIT_FAILURE);
+
+				case 0:
+					close_file(pipes[c][0]);
+
+					dup2(pipes[c][1],1);
+					close_file(pipes[c][1]);
+
+					dup2(pipes[c-1][0],0);
+					close_file(pipes[c-1][0]);
+
+
+					char *command_args[MAX_EXEC_ARGS];
+                    char *formatter = " ";
+                    int number_args_commands = 0;
+                    tofree[c] = parse_program(exec_args[c], command_args, formatter, &number_args_commands);
+
+					execvp(command_args[0], command_args);
+                    exit(EXIT_FAILURE);
+
+				default:
+					close_file(pipes[c][1]);
+					close_file(pipes[c-1][0]);
+			}
+		}
+	}
+
+	for (int i = 0; i < number_args; i++) {
+        wait(&status[i]);
+        if (WIFEXITED(status[i]) && WEXITSTATUS(status[i]) > 0) 
+            perror("[ERROR 14] fork execution failure:");
     }
-
-    for (int i = 0; i < number_args; i++) {
-        if (fork() == 0) {
-            char *command_args[20];
-            char *formatter = " ";
-
-            int number_args_commands = 0;
-            tofree[i] = parse_program(exec_args[i], command_args, formatter, &number_args_commands);
-
-            if (i > 0) {
-                dup2(pipes[i - 1][0], 0);
-                close_file(pipes[i - 1][0]);
-            }
-            if (i < num_pipes) {
-                dup2(pipes[i][1], 1);
-                close_file(pipes[i][1]);
-            } else {
-                dup2(temp_fd, 1);  // std_out
-                dup2(temp_fd, 2);  // std_err
-                close_file(temp_fd);
-            }
-
-            for (int j = 0; j < num_pipes; j++) {
-                close_file(pipes[j][0]);
-                close_file(pipes[j][1]);
-            }
-
-            execvp(command_args[0], command_args);
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    for (int i = 0; i < num_pipes; i++) {
-        close_file(pipes[i][0]);
-        close_file(pipes[i][1]);
-    }
-
+    
+    // libertação da memória alocada
     tofree[number_args] = NULL;
     for (int j = 0; tofree[j] != NULL; j++) free(tofree[j]);
-
-    for (int i = 0; i < number_args; i++) {
-        int status;
-        wait(&status);
-        if (WIFEXITED(status) && WEXITSTATUS(status) > 0) perror("[ERROR 14] fork execution failure:");
-    }
 }
 
 /**
@@ -162,7 +217,7 @@ void execute_pipe_message(int message_pid, char *exec_args[20], char *folder_pat
 */
 long parse_and_execute_message(Msg *msg_to_handle, char *folder_path) {
     int number_args;
-    char *exec_args[20];
+    char *exec_args[MAX_EXEC_ARGS];
     char *formatter = msg_to_handle->is_pipe ? "|" : " ";
 
     // este é o primeiro parse, que funcionar para mensagens do tipo pipe ou singular.

@@ -12,7 +12,8 @@
 #define MAX_MESSAGE_NUMBER 100
 #define MAX_PROGRAM_SIZE 300
 #define MAX_STRING_SIZE 350  // 300 + 50 para manobra
-#define MAX_PIPE_NUMBER 20
+#define MAX_PIPE_NUMBER 100
+#define MAX_EXEC_ARGS 100
 
 typedef enum message_type {
     ERR,
@@ -52,13 +53,9 @@ typedef struct msg_list {
     int parallel_tasks;
 } Msg_list;
 
-//long calculate_time_diff(struct timeval time_before, struct timeval time_after);
-
 void create_message(Msg *msg, int pid, int time, int is_pipe, char *program, MESSAGE_TYPE type);
 
 void create_message_to_print(Msg_to_print *msg, int pid, int time_spent, char *program, MESSAGE_TYPE type);
-
-//void free_message(Msg msg);
 
 long parse_and_execute_message(Msg *msg_to_handle, char *folder_path);
 

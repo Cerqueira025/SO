@@ -112,19 +112,6 @@ int read_file(int outgoing_fd, void *msg_to_read, size_t n_byes) {
 
 
 /**
- * dado um comando constituido por um conjunto de argumentos
- * (conjunto de strings) executa-se o mesmo, garantindo que
- * todas as excessões são tidas em conta
-*/
-void exec_command(char **exec_args) {
-    if (execvp(exec_args[0], exec_args) == -1) {
-        perror("[ERROR 31] execvp:");
-        exit(EXIT_FAILURE);
-    }
-}
-
-
-/**
  * a partir de duas estruturas timeval em que uma representa
  * um instante anterior e outra um instante posterior, a função
  * calcula a diferença entres esses instantes, em milissegundos
