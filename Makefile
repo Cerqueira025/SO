@@ -35,7 +35,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(DEPS)
 	$(CC) $(CFLAGS) -I$(INC_DIR) -c $< -o $@
 
 clean:
-	rm -f -r obj/* tmp/* bin/*
+	rm -f -r obj tmp bin
 	@echo "\nSuccessfully cleaned\n"
 
 format:
