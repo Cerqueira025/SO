@@ -382,17 +382,17 @@ void send_status_to_client(Msg_list messages, int message_pid, char *shared_file
     Msg_to_print msg_to_send;
     create_message_to_print(&msg_to_send, -1, -1, "Executing\n", TEXT);
 
-    write_file(outgoing_fd, &msg_to_send, sizeof(Msg));
+    write_file(outgoing_fd, &msg_to_send, sizeof(Msg_to_print));
 
     send_messages(messages.executing_messages, messages.executing_messages_size, outgoing_fd);
 
     create_message_to_print(&msg_to_send, -1, -1, "\nScheduled\n", TEXT);
-    write_file(outgoing_fd, &msg_to_send, sizeof(Msg));
+    write_file(outgoing_fd, &msg_to_send, sizeof(Msg_to_print));
 
     send_messages(messages.scheduled_messages, messages.scheduled_messages_size, outgoing_fd);
 
     create_message_to_print(&msg_to_send, -1, -1, "\nCompleted\n", TEXT);
-    write_file(outgoing_fd, &msg_to_send, sizeof(Msg));
+    write_file(outgoing_fd, &msg_to_send, sizeof(Msg_to_print));
 
     read_and_send_messages(shared_file_path, outgoing_fd);
 
@@ -419,7 +419,7 @@ void write_time_spent(char *shared_file_path, Msg msg_to_write, long time_spent)
     Msg_to_print outgoing_msg;
     create_message_to_print(&outgoing_msg, msg_to_write.pid, time_spent, msg_to_write.program, PROGRAM_ID_TIMESPENT);
 
-    write_file(shared_fd, &outgoing_msg, sizeof(Msg));
+    write_file(shared_fd, &outgoing_msg, sizeof(Msg_to_print));
     close_file(shared_fd);
 }
 
