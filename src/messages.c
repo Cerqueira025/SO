@@ -88,7 +88,6 @@ void execute_message(int pid, char *exec_args[MAX_EXEC_ARGS], char *folder_path)
 */
 void execute_pipe_message(int message_pid, char *exec_args[MAX_EXEC_ARGS], char *folder_path, int number_args) {
     int pipes[MAX_PIPE_NUMBER][2];
-    char *tofree[MAX_PIPE_NUMBER + 1];
 	int status[MAX_PIPE_NUMBER + 1];
 
     char buf[40];
@@ -121,7 +120,7 @@ void execute_pipe_message(int message_pid, char *exec_args[MAX_EXEC_ARGS], char 
 					char *command_args[MAX_EXEC_ARGS];
                     char *formatter = " ";
                     int number_args_commands = 0;
-                    tofree[c] = parse_program(exec_args[c], command_args, formatter, &number_args_commands);
+                    parse_program(exec_args[c], command_args, formatter, &number_args_commands);
 
 					execvp(command_args[0], command_args);
                     exit(EXIT_FAILURE);
@@ -150,7 +149,7 @@ void execute_pipe_message(int message_pid, char *exec_args[MAX_EXEC_ARGS], char 
 					char *command_args[MAX_EXEC_ARGS];
                     char *formatter = " ";
                     int number_args_commands = 0;
-                    tofree[c] = parse_program(exec_args[c], command_args, formatter, &number_args_commands);
+                    parse_program(exec_args[c], command_args, formatter, &number_args_commands);
 
 					execvp(command_args[0], command_args);
                     exit(EXIT_FAILURE);
@@ -185,7 +184,7 @@ void execute_pipe_message(int message_pid, char *exec_args[MAX_EXEC_ARGS], char 
 					char *command_args[MAX_EXEC_ARGS];
                     char *formatter = " ";
                     int number_args_commands = 0;
-                    tofree[c] = parse_program(exec_args[c], command_args, formatter, &number_args_commands);
+                    parse_program(exec_args[c], command_args, formatter, &number_args_commands);
 
 					execvp(command_args[0], command_args);
                     exit(EXIT_FAILURE);
@@ -204,8 +203,7 @@ void execute_pipe_message(int message_pid, char *exec_args[MAX_EXEC_ARGS], char 
     }
     
     // libertação da memória alocada
-    tofree[number_args] = NULL;
-    for (int j = 0; tofree[j] != NULL; j++) free(tofree[j]);
+    
 }
 
 /**
