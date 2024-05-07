@@ -4,7 +4,7 @@
 
 int main(int argc, char **argv) {
     if (argc != 4 && argc != 6) {
-        write_file(STDOUT_FILENO, "usage: ./orchestrator output_folder parallel-tasks sched-policy <'test-mode'> <num-tests>\n", 91);
+        write_file(STDOUT_FILENO, "usage: ./orchestrator output_folder parallel-tasks sched-policy <'test-mode'> <num-tasks>\n", 91);
         exit(EXIT_FAILURE);
     }
 

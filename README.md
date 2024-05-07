@@ -7,5 +7,5 @@ Eduardo Faria - a104353
 Nuno Silva - a104089 
 
 Ficheiro adicionais:
-    "run20.sh" - script para enviar 20 tarefas pelo cliente, com a função sleep com um valor de 1 a 10;
+    "run.sh" - script para enviar num_tasks tarefas pelo cliente, com a função sleep de tempo variável entre 1 e sleep_limit. documentação adicional no relatório;
     ".clang-format" - ficheiro para formatar código, feito através do comando 'make format';
