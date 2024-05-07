@@ -222,11 +222,6 @@ long parse_and_execute_message(Msg *msg_to_handle, char *folder_path) {
     // este é o primeiro parse, que funcionar para mensagens do tipo pipe ou singular.
     char *tofree = parse_program(msg_to_handle->program, exec_args, formatter, &number_args);
 
-    struct timeval time_before, time_after;
-    if (gettimeofday(&time_before, NULL) < 0) {
-        perror("[ERROR 15] gettimeofday:");
-        exit(EXIT_FAILURE);
-    }
 
     if (msg_to_handle->is_pipe)
         // nesta função, usa-se novamente "parse_program()", mas a string que esta devolve
@@ -236,11 +231,13 @@ long parse_and_execute_message(Msg *msg_to_handle, char *folder_path) {
         // nesta função não se usa "parse_program()"
         execute_message(msg_to_handle->pid, exec_args, folder_path);
 
-    if (gettimeofday(&time_after, NULL) < 0) {
+    // finalização da contagem de tempo da tarefa
+    struct timeval end_time;
+    if (gettimeofday(&end_time, NULL) < 0) {
         perror("[ERROR 16] gettimeofday:");
         exit(EXIT_FAILURE);
     }
-    long time_spent = calculate_time_diff(time_before, time_after);
+    long time_spent = calculate_time_diff(msg_to_handle->start_time, end_time);
 
     msg_to_handle->type = COMPLETED;
 
@@ -423,6 +420,25 @@ void write_time_spent(char *shared_file_path, Msg msg_to_write, long time_spent)
     close_file(shared_fd);
 }
 
+/**
+ * calcula, a partir do ficheiro com a inforamçaõ relativa à conclusão das tarefas,
+ * o tempo médio gasto por tarefa
+*/
+double calculate_average_time_spent(char *shared_file_path) {
+    int shared_fd = open_file(shared_file_path, O_RDONLY, 0);
+    long total = 0;
+    int count = 0;
+
+    Msg_to_print incoming_msg;
+    while(read(shared_fd, &incoming_msg, sizeof(Msg_to_print)) > 0) {
+        total += incoming_msg.time_spent;
+        count++;
+    }
+    
+    close_file(shared_fd);
+    
+    return (double) total/count;
+}
 
 
 /*---------FUNÇÕES AUXILIARES CLIENT---------*/

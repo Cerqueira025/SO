@@ -3,8 +3,8 @@
 
 
 int main(int argc, char **argv) {
-    if (argc != 4 && argc != 5) {
-        write_file(STDOUT_FILENO, "usage: ./orchestrator output_folder parallel-tasks sched-policy <test-mode>\n", 77);
+    if (argc != 4 && argc != 6) {
+        write_file(STDOUT_FILENO, "usage: ./orchestrator output_folder parallel-tasks sched-policy <'test-mode'> <num-tests>\n", 91);
         exit(EXIT_FAILURE);
     }
 
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
     int is_testing = -1;
     if (argv[4] != NULL) {
         if (strcmp(argv[4], "test-mode") == 0) {
-            is_testing = NUM_TESTS - 1;
+            is_testing = atoi(argv[5]) - 1;
             write_file(STDOUT_FILENO, "Test mode enabled\n", 19);
         } else {
             perror("Incorrect test-mode. Usage: test-mode");
@@ -96,6 +96,12 @@ int main(int argc, char **argv) {
                 // envia-se o número do tarefa através do fifo criado pelo cliente
                 send_task_number_to_client(message_received.pid);
 
+                // inicialização da contagem de tempo da tarefa
+                if (gettimeofday(&message_received.start_time, NULL) < 0) {
+                    perror("[ERROR 15] gettimeofday:");
+                    exit(EXIT_FAILURE);
+                }
+
                 // inserir a tarefa na lista de tarefas agendadas
                 insert_scheduled_messages_list(&messages_list, message_received);
             }
@@ -155,8 +161,10 @@ int main(int argc, char **argv) {
         }
 
         long time_spent = calculate_time_diff(time_before, time_after);
-        char time_spent_buffer[50];
-        if (sprintf(time_spent_buffer, "Took %ld ms to execute 20 tasks\n", time_spent) < 0) {
+        double average_time_per_task = calculate_average_time_spent(shared_file_path);
+
+        char time_spent_buffer[90];
+        if (sprintf(time_spent_buffer, "Took %ld ms to execute %d tasks\nThe average time per task was %.3f ms\n", time_spent, atoi(argv[5]), average_time_per_task) < 0) {
             perror("[ERROR 22] sprintf:");
             exit(EXIT_FAILURE);
         }

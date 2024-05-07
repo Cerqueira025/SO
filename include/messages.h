@@ -42,6 +42,7 @@ typedef struct msg {
     int is_pipe;
     char program[MAX_PROGRAM_SIZE];
     MESSAGE_TYPE type;
+    struct timeval start_time;
 } Msg;
 
 typedef struct msg_list {
@@ -80,6 +81,8 @@ void send_status_to_client(Msg_list messages, int message_pid, char *shared_file
 void send_task_number_to_client(int message_pid);
 
 void write_time_spent(char *shared_file_path, Msg msg_to_write, long time_spent);
+
+double calculate_average_time_spent(char *shared_file_path);
 
 /*---------FUNÇÕES AUXILIARES CLIENT---------*/
 void send_message_to_server(Msg msg_to_send);

@@ -11,7 +11,6 @@
 #include <unistd.h>
 
 #define MAIN_FIFO_NAME "tmp/fifo_main"
-#define NUM_TESTS 20
 
 typedef enum sched_policy {
     FCFS,

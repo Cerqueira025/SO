@@ -1,14 +1,10 @@
 #!/bin/bash
 
-random_sleep() {
-    echo $((RANDOM % 10 + 1))
-}
-
 run_tests() {
-    local num_tests=20
+    local num_tests=$1
 
-    for ((i = 1; i <= num_tests; i++)); do
-        sleep_time=$(random_sleep)
+    for ((i = num_tests; i >= 1; i--)); do
+        sleep_time=$i
         ms_time=$((sleep_time * 1000))
 
         bin/client execute $ms_time -u "sleep $sleep_time"
@@ -17,5 +13,9 @@ run_tests() {
     echo "All requests sent completed."
 }
 
-run_tests
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <num_tests>"
+    exit 1
+fi
 
+run_tests $1
